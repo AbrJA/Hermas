@@ -1,350 +1,423 @@
-# Solomon
+# 🧠 Solomon
 
-Production-ready conversational AI assistant built with FastAPI, streaming chat responses, skill routing, MCP tool integration, and persistent conversation history.
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-red.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-148%20passed-brightgreen.svg)](tests/)
 
-Solomon combines a lightweight web UI with a backend designed for practical local development and extensible production deployments. It supports direct chat completions, SSE streaming, optional skill-based prompt augmentation, MCP server registration and tool execution, and async persistence for sessions and conversations.
+> **Production-ready conversational AI assistant** with streaming responses, skill routing, MCP tool integration, and persistent conversation history.
 
-## Highlights
+Solomon is a modern backend and lightweight web UI designed for practical local development and extensible production deployments. It combines real-time chat streaming via Server-Sent Events, optional skill-based prompt augmentation, MCP server tool integration, and async persistence—all with strong test coverage.
 
-- Streaming chat via Server-Sent Events at `/api/chat/stream`
-- Standard non-streaming chat completions at `/api/chat`
-- Conversation history, loading, and search
-- Session-based access flow with optional app token enforcement
-- Markdown skill upload and storage
-- Optional LLM-based auto skill routing
-- MCP server management, tool discovery, and tool execution loop
-- OpenAI and OpenAI-compatible backend support
-- Async SQLAlchemy persistence with SQLite by default
-- Frontend included in `public/`
-- Docker and `uv` workflows
+---
 
-## Tech Stack
+## ✨ Highlights
 
-- Python 3.12+
-- FastAPI
-- Uvicorn
-- SQLAlchemy Async + aiosqlite
-- OpenAI Python SDK
-- sse-starlette
-- pydantic-settings
-- structlog
-- Vanilla HTML, CSS, and JavaScript frontend
-- pytest for test coverage
+- 🚀 **Streaming Chat** – Real-time Server-Sent Events at `/api/chat/stream`
+- 💬 **Standard Completions** – Non-streaming responses at `/api/chat`
+- 📚 **Conversation History** – Load, list, and search past conversations
+- 🎯 **Smart Skills** – Upload markdown skills and auto-route with the LLM
+- 🔌 **MCP Integration** – Register tools, discover capabilities, execute in context
+- 🔐 **Session Management** – Token-based access with optional app token auth
+- ⚡ **Async SQLAlchemy** – Fast async persistence with SQLite by default
+- 🌐 **Included Frontend** – Clean, vanilla HTML/CSS/JS web UI
+- 🐳 **Docker Ready** – Full Docker Compose support for local and production
 
-## Project Layout
+## 🛠️ Tech Stack
 
-```text
-docker-compose.yml
-Dockerfile
-pyproject.toml
-README.md
-data/
-deploy/
-	nginx.conf
-public/
-	app.css
-	app.js
-	index.html
-src/
-	solomon/
-		config.py
-		database.py
-		main.py
-		api/
-		middleware/
-		models/
-		schemas/
-		services/
-tests/
+| Component | Technology |
+|-----------|------------|
+| Backend | FastAPI + Uvicorn |
+| Database | SQLAlchemy Async + aiosqlite |
+| LLM | OpenAI Python SDK |
+| Streaming | sse-starlette |
+| Config | pydantic-settings |
+| Logging | structlog |
+| Frontend | Vanilla HTML/CSS/JS |
+| Testing | pytest (148+ tests) |
+
+## 📁 Project Layout
+
+```
+solomon/
+├── 📄 docker-compose.yml
+├── 🐳 Dockerfile
+├── 📦 pyproject.toml
+├── 📖 README.md
+├── 📂 data/                      # Application data
+├── 📂 deploy/
+│   └── nginx.conf               # Production reverse proxy config
+├── 🎨 public/                    # Frontend assets
+│   ├── app.css
+│   ├── app.js
+│   └── index.html
+├── 🐍 src/solomon/
+│   ├── config.py
+│   ├── database.py
+│   ├── main.py
+│   ├── api/                     # API endpoints
+│   ├── middleware/              # Request middleware
+│   ├── models/                  # ORM models
+│   ├── schemas/                 # Request/response schemas
+│   └── services/                # Business logic
+└── 🧪 tests/                     # Test suite
 ```
 
-## Requirements
+## 📋 Requirements
 
-- Python 3.12 or newer
-- `uv` installed
-- An API key for OpenAI or another OpenAI-compatible provider
+- **Python 3.12+** – Modern async support
+- **uv** – Fast Python package manager
+- **OpenAI API Key** – For any OpenAI-compatible provider
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Install dependencies
+### 1️⃣ Install Dependencies
 
 ```bash
 uv sync
 ```
 
-### 2. Create your environment file
+### 2️⃣ Configure Your Environment
 
 Create `.env` in the project root:
 
 ```env
+# Server
 SOLOMON_HOST=0.0.0.0
 SOLOMON_PORT=8080
 
+# LLM Provider
 SOLOMON_LLM_BASE_URL=https://api.openai.com
 SOLOMON_DEFAULT_MODEL=gpt-4o-mini
 SOLOMON_DEFAULT_API_KEY=your_api_key_here
 
+# Prompting
 SOLOMON_SYSTEM_PROMPT=You are Solomon, a helpful assistant. Keep answers accurate, concise, and actionable.
+
+# Features
 SOLOMON_SKILLS_DIR=skills
 SOLOMON_DATA_DIR=data
 SOLOMON_CORS_ORIGIN=*
 SOLOMON_REQUEST_TIMEOUT_SECONDS=30
 
+# Security
 SOLOMON_REQUIRE_AUTH=false
 SOLOMON_APP_API_TOKEN=
 SOLOMON_SESSION_TTL_SECONDS=86400
 ```
 
-### 3. Start the app
-
-Either run the module entrypoint:
+### 3️⃣ Run the Application
 
 ```bash
 uv run src/solomon/main.py
 ```
 
-Or use the installed script entrypoint:
+Or use the script entrypoint:
 
 ```bash
 uv run solomon
 ```
 
-The application starts on `http://localhost:8080` by default.
+✅ Visit **[http://localhost:8080](http://localhost:8080)** in your browser.
 
-## Docker
+## 🐳 Docker
 
-Build and run with Docker Compose:
+Deploy with Docker Compose in one command:
 
 ```bash
 docker compose up --build
 ```
 
-This project includes:
+Includes:
+- ✅ Application Dockerfile
+- ✅ docker-compose.yml orchestration
+- ✅ nginx.conf for reverse proxy setup
 
-- `Dockerfile` for the application image
-- `docker-compose.yml` for local orchestration
-- `deploy/nginx.conf` for reverse proxy deployment support
+## 🎯 How It Works
 
-## How It Works
+### 💬 Chat Flow
 
-### Chat Flow
+1. Frontend creates a session → `/api/session`
+2. Client sends messages → `/api/chat` or `/api/chat/stream`
+3. System prompt is built from base + selected skills
+4. If MCP servers attached → discover tools + execute loop
+5. Final answer is persisted → conversations history API
 
-1. The frontend creates a session with `/api/session`.
-2. The client sends chat payloads to `/api/chat` or `/api/chat/stream`.
-3. Solomon builds a system prompt from the base prompt plus any selected or auto-routed skills.
-4. If MCP servers are attached, Solomon discovers tools and can run a tool loop before producing the final answer.
-5. Conversations are persisted and can be listed, loaded, or searched later.
+### 🎨 Skills System
 
-### Skills
+**Skills** are markdown instruction fragments stored in the database.
 
-Skills are markdown-defined prompt fragments stored in the database.
+- Upload new skills from `.md` files
+- Manually select candidate skills per request
+- Enable `autoSkillRouting=true` → LLM picks the best match
+- If no skill applies → standard assistant behavior
 
-- Skills can be uploaded from `.md` files
-- Users can manually select candidate skills
-- With `autoSkillRouting=true`, the LLM chooses the best matching skill from the selected candidates
-- If no skill clearly applies, Solomon answers normally without injecting optional skill context
+### 🔌 MCP (Model Context Protocol)
 
-### MCP Tooling
+Solomon integrates remote MCP servers for runtime tools:
 
-Solomon supports Model Context Protocol servers as runtime tools.
+- Register MCP server configs (per user)
+- Discover available tools via `/api/mcp/tools`
+- Model can emit `<tool_call>` blocks during chat
+- Backend executes tools in a controlled loop
+- Tool results fed back into context
 
-- Register per-user MCP servers
-- Discover available tools from a server
-- Let the model emit tool calls in a controlled loop
-- Feed tool results back into the model before the final answer
+**Safety controls:**
+- Bounded tool iterations
+- Tool result truncation
+- Structured failure logging
 
-The chat service enforces:
+## ⚙️ Configuration
 
-- bounded tool iterations
-- tool result truncation
-- structured failure logging
+All settings load from `.env` with the `SOLOMON_` prefix.
 
-## Configuration
+### 🔧 Core Settings
 
-Configuration is loaded from `.env` with the `SOLOMON_` prefix.
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `SOLOMON_HOST` | Server bind host | `0.0.0.0` |
+| `SOLOMON_PORT` | Server bind port | `8080` |
+| `SOLOMON_LLM_BASE_URL` | LLM provider URL | `https://api.openai.com` |
+| `SOLOMON_DEFAULT_MODEL` | Default model/deployment | `gpt-4o-mini` |
+| `SOLOMON_DEFAULT_API_KEY` | Backend API key | *(required)* |
+| `SOLOMON_SYSTEM_PROMPT` | Base assistant prompt | *(see example)* |
+| `SOLOMON_REQUEST_TIMEOUT_SECONDS` | Request timeout | `30` |
 
-### Core Settings
+### 🔐 Auth Settings
 
-- `SOLOMON_HOST`: bind host, default `0.0.0.0`
-- `SOLOMON_PORT`: bind port, default `8080`
-- `SOLOMON_LLM_BASE_URL`: provider base URL, for OpenAI use `https://api.openai.com`
-- `SOLOMON_DEFAULT_MODEL`: default chat model or Azure deployment name
-- `SOLOMON_DEFAULT_API_KEY`: backend API key if the frontend does not provide one
-- `SOLOMON_SYSTEM_PROMPT`: base assistant system prompt
-- `SOLOMON_REQUEST_TIMEOUT_SECONDS`: timeout for LLM and tool calls
-- `SOLOMON_SKILLS_DIR`: filesystem directory seeded for skills on boot
-- `SOLOMON_DATA_DIR`: application data directory
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `SOLOMON_REQUIRE_AUTH` | Enforce auth checks | `false` |
+| `SOLOMON_APP_API_TOKEN` | App-level access token | *(optional)* |
+| `SOLOMON_SESSION_TTL_SECONDS` | Session lifetime | `86400` |
 
-### Auth Settings
+## 🔌 API Endpoints
 
-- `SOLOMON_REQUIRE_AUTH`: enables app/session auth checks
-- `SOLOMON_APP_API_TOKEN`: optional app token required for session creation
-- `SOLOMON_SESSION_TTL_SECONDS`: session lifetime in seconds
+### Health & Config
 
-## API Overview
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/health` | Service health check |
+| `GET` | `/api/readiness` | Readiness probe |
+| `GET` | `/api/config` | Client-facing config |
 
-### Health and Config
+### 💬 Chat
 
-- `GET /api/health`
-- `GET /api/readiness`
-- `GET /api/config`
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/api/chat` | Standard completion |
+| `POST` | `/api/chat/stream` | SSE streaming completion |
 
-### Sessions
+### 📚 Conversations
 
-- `POST /api/session`
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/conversations/list` | List all conversations |
+| `GET` | `/api/conversations/load?id=...` | Load specific conversation |
+| `GET` | `/api/conversations/search?q=...` | Search conversations |
 
-### Chat
+### 🎨 Skills
 
-- `POST /api/chat`
-- `POST /api/chat/stream`
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/skills` | List all skills |
+| `GET` | `/api/skills/{skill_id}` | Get skill details |
+| `POST` | `/api/skills` | Create skill |
+| `POST` | `/api/skills/upload` | Upload `.md` skill file |
+| `DELETE` | `/api/skills/{skill_id}` | Delete skill |
 
-### Conversations
+### 🔌 MCP
 
-- `GET /api/conversations/list`
-- `GET /api/conversations/load?id=<conversation_id>`
-- `GET /api/conversations/search?q=<text>`
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `GET` | `/api/mcp/servers` | List user MCP servers |
+| `POST` | `/api/mcp/servers` | Register MCP server |
+| `DELETE` | `/api/mcp/servers/{id}` | Unregister server |
+| `POST` | `/api/mcp/tools` | Discover server tools |
+| `POST` | `/api/mcp/call` | Execute tool
 
-### Skills
+## 📡 Streaming Response Model
 
-- `GET /api/skills`
-- `GET /api/skills/{skill_id}`
-- `POST /api/skills`
-- `POST /api/skills/upload`
-- `DELETE /api/skills/{skill_id}`
+The `/api/chat/stream` endpoint emits **Server-Sent Events (SSE)** with JSON payloads.
 
-### MCP
+Event types:
+| Event | Payload | Purpose |
+|-------|---------|---------|
+| `start` | `{conversationId, model, appliedSkillIds}` | Initialization |
+| `tool_start` | `{iteration, server, tool}` | Tool call begins |
+| `tool_done` | `{iteration, server, tool, resultLength}` | Tool call ends |
+| `token` | `{delta}` | Incremental output chunk |
+| `done` | `{conversationId, content, appliedSkillIds}` | Final message |
 
-- `GET /api/mcp/servers`
-- `POST /api/mcp/servers`
-- `DELETE /api/mcp/servers/{server_id}`
-- `POST /api/mcp/tools`
-- `POST /api/mcp/call`
+This design allows frontends to render progressive output while ensuring the final canonical message is preserved for storage.
 
-## Streaming Response Model
+## 💻 Example Usage
 
-The streaming endpoint emits SSE events with JSON payloads. Event types include:
-
-- `start`: initial metadata such as `conversationId`, model, and applied skill IDs
-- `tool_start`: emitted when a tool call begins
-- `tool_done`: emitted when a tool call completes
-- `token`: incremental text output in `delta`
-- `done`: final content envelope
-
-This makes it easy for the frontend to display progressive output while preserving the final canonical assistant message for persistence.
-
-## Example Usage
-
-### Create a session
+### ✅ Create a Session
 
 ```bash
 curl -X POST http://localhost:8080/api/session \
-	-H "Content-Type: application/json" \
-	-d '{"userId":"anonymous"}'
+  -H "Content-Type: application/json" \
+  -d '{"userId":"user123"}'
 ```
 
-### Send a normal chat request
+### 💬 Send a Chat Request
 
 ```bash
 curl -X POST http://localhost:8080/api/chat \
-	-H "Content-Type: application/json" \
-	-H "X-Session-Token: <session_token>" \
-	-H "X-User-Id: anonymous" \
-	-d '{
-		"messages": [{"role": "user", "content": "Hello"}],
-		"model": "gpt-4o-mini",
-		"baseUrl": "https://api.openai.com",
-		"selectedSkillIds": [],
-		"autoSkillRouting": true,
-		"mcpServers": []
-	}'
+  -H "Content-Type: application/json" \
+  -H "X-Session-Token: <token>" \
+  -H "X-User-Id: user123" \
+  -d '{
+    "messages": [{"role": "user", "content": "Hello"}],
+    "model": "gpt-4o-mini",
+    "selectedSkillIds": [],
+    "autoSkillRouting": true
+  }'
 ```
 
-### Send a streaming chat request
+### 🚀 Stream a Response
 
 ```bash
 curl -N -X POST http://localhost:8080/api/chat/stream \
-	-H "Content-Type: application/json" \
-	-H "X-Session-Token: <session_token>" \
-	-H "X-User-Id: anonymous" \
-	-d '{
-		"messages": [{"role": "user", "content": "Summarize this project"}],
-		"model": "gpt-4o-mini",
-		"baseUrl": "https://api.openai.com",
-		"selectedSkillIds": [],
-		"autoSkillRouting": true,
-		"mcpServers": []
-	}'
+  -H "Content-Type: application/json" \
+  -H "X-Session-Token: <token>" \
+  -H "X-User-Id: user123" \
+  -d '{
+    "messages": [{"role": "user", "content": "Explain SSE"}],
+    "model": "gpt-4o-mini",
+    "selectedSkillIds": [],
+    "autoSkillRouting": true
+  }'
 ```
 
-## Development
+## 🧪 Development
 
-### Run tests
+### Run All Tests
 
 ```bash
-uv run pytest tests/ -q
+uv run pytest tests/ -v
 ```
 
-### Run linting
+**Coverage:** 148+ tests across services, API, streaming, prompt building, MCP, and middleware.
+
+### Run Linting
 
 ```bash
 uv run ruff check src tests
 ```
 
-### Design Notes
+### Architecture Notes
 
-- API route translation lives in `src/solomon/api/`
-- Core orchestration logic lives in `src/solomon/services/`
-- Persistence models live in `src/solomon/models/`
-- Request and response contracts live in `src/solomon/schemas/`
-- Static frontend assets live in `public/`
+- **API Layer** (`src/solomon/api/`) – Route handlers, dependency injection
+- **Services** (`src/solomon/services/`) – Business logic, orchestration
+- **Models** (`src/solomon/models/`) – SQLAlchemy ORM
+- **Schemas** (`src/solomon/schemas/`) – Request/response contracts
+- **Frontend** (`public/`) – Vanilla HTML/CSS/JS UI
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
-### 404 from the LLM provider
+### ❌ `LLM endpoint/model not found (404)`
 
-If you see warnings such as `LLM endpoint/model not found (404)`, verify:
+**Error:** Provider returns 404 when calling the model.
 
-- `SOLOMON_LLM_BASE_URL` is correct for your provider
-- `SOLOMON_DEFAULT_MODEL` exists and is enabled for your API key
-- your API key belongs to the expected project/account
+**Check:**
+- ✅ `SOLOMON_LLM_BASE_URL` is correct
+- ✅ `SOLOMON_DEFAULT_MODEL` exists and is enabled
+- ✅ API key belongs to the right project/account
 
-For standard OpenAI usage:
-
+**For OpenAI:**
 ```env
 SOLOMON_LLM_BASE_URL=https://api.openai.com
 SOLOMON_DEFAULT_MODEL=gpt-4o-mini
 ```
 
-### Empty streamed responses
+### ❌ Empty Streamed Responses
 
-If the UI shows an empty response, check that SSE events are reaching the browser correctly and that the app is running the latest code path for encoded SSE output.
+**Problem:** UI shows `(Empty response)` even though the model responds.
 
-### MCP tools not appearing
+**Solution:** Verify SSE events are encoding correctly and reaching the browser. Latest code paths ensure proper encoding.
 
-Check:
+### ❌ MCP Tools Not Appearing
 
-- the saved MCP server URL
-- auth header name and value
-- `/api/mcp/tools` response for that server
+**Check:**
+- ✅ MCP server URL is reachable
+- ✅ Auth headers are correct (if required)
+- ✅ `/api/mcp/tools` endpoint returns tools
 
-### Session or auth problems
+### ❌ Auth Failures
 
-If auth is enabled, make sure requests send the required headers:
+**If** `SOLOMON_REQUIRE_AUTH=true`:
 
-- `X-App-Token` when creating a session, if configured
+Required headers on every request:
+- `X-App-Token` (session creation, if configured)
 - `X-Session-Token`
 - `X-User-Id`
 
-## Testing Status
+## 📊 Testing
 
-The repository includes an extensive automated test suite covering configuration, chat services, streaming, prompt building, MCP integration, middleware, and API behavior.
+Comprehensive test suite with **148+ passing tests** across:
 
-Run everything with:
+- ✅ Configuration loading
+- ✅ Chat services (streaming & standard)
+- ✅ Prompt building and skill routing
+- ✅ MCP integration
+- ✅ Middleware and error handling
+- ✅ API endpoints
+
+**Run full suite:**
 
 ```bash
-uv run pytest tests/ -q
+uv run pytest tests/ -v
 ```
 
-## License
+---
 
-No license is declared yet. Add the appropriate license for your intended distribution model.
+## 📄 License
+
+Solomon is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+
+### Summary
+
+This software is free and open-source under the GPL-3.0 license:
+
+- **Freedom to use** – For any purpose
+- **Freedom to modify** – Access to source code
+- **Freedom to distribute** – Under the same GPL-3.0 terms
+- **Must include license** – When distributing
+- **Must provide source** – Derivative works also under GPL-3.0
+
+### Full License Text
+
+```
+Solomon - Conversational AI Assistant
+Copyright (c) 2026 AbrJA
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
+
+---
+
+## 🙏 Acknowledgments
+
+Built with ❤️ using:
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [SQLAlchemy](https://www.sqlalchemy.org/)
+- [OpenAI Python SDK](https://github.com/openai/openai-python)
+- [sse-starlette](https://github.com/sysid/sse-starlette)
+- [pydantic](https://docs.pydantic.dev/)
+
+---
+
+**Made with ☕ by the Solomon team**

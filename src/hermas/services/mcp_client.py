@@ -61,7 +61,7 @@ async def _initialize_session(server: MCPServerConfig) -> str:
         "params": {
             "protocolVersion": "2024-11-05",
             "capabilities": {},
-            "clientInfo": {"name": "solomon", "version": "1.0.0"},
+            "clientInfo": {"name": "hermas", "version": "1.0.0"},
         },
     }
 

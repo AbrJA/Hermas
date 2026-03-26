@@ -2,7 +2,7 @@
 
 import json
 
-from solomon.services.stream_formatter import sse_event
+from hermas.services.stream_formatter import sse_event
 
 
 def test_sse_event_format():

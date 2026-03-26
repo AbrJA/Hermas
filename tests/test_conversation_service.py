@@ -2,7 +2,7 @@
 
 import pytest
 
-from solomon.services import conversation_service
+from hermas.services import conversation_service
 
 
 @pytest.mark.asyncio
@@ -88,7 +88,7 @@ async def test_title_truncation(db_session):
 
 @pytest.mark.asyncio
 async def test_safe_user_id():
-    from solomon.services.conversation_service import _safe_user_id
+    from hermas.services.conversation_service import _safe_user_id
 
     assert _safe_user_id("Alice@Company") == "alice-company"
     assert _safe_user_id("") == "anonymous"

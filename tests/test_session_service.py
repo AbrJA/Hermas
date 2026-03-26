@@ -2,7 +2,7 @@
 
 import pytest
 
-from solomon.services import session_service
+from hermas.services import session_service
 
 
 @pytest.mark.asyncio
@@ -38,7 +38,7 @@ async def test_expired_session_returns_none(db_session):
     # Manually expire it
     from sqlalchemy import update
 
-    from solomon.models.session import Session
+    from hermas.models.session import Session
 
     await db_session.execute(
         update(Session).where(Session.token == token).values(expires_at=0)
@@ -55,7 +55,7 @@ async def test_cleanup_expired(db_session):
     token = await session_service.create_session(db_session, "dave", 60)
     from sqlalchemy import update
 
-    from solomon.models.session import Session
+    from hermas.models.session import Session
 
     await db_session.execute(
         update(Session).where(Session.token == token).values(expires_at=0)

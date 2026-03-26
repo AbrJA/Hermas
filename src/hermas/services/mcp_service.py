@@ -7,8 +7,8 @@ import uuid
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.models.mcp_server import MCPServer
-from solomon.services import mcp_client
+from hermas.models.mcp_server import MCPServer
+from hermas.services import mcp_client
 
 
 def _safe_user_id(user_id: str) -> str:

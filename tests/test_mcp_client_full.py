@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from solomon.services.mcp_client import (
+from hermas.services.mcp_client import (
     MCPServerConfig,
     _get_session_id,
     _initialize_session,
@@ -37,7 +37,7 @@ async def test_initialize_session():
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("solomon.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("hermas.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
         session_id = await _initialize_session(server)
         assert session_id == "test-session-123"
         assert _session_ids[server._session_key()] == "test-session-123"
@@ -55,7 +55,7 @@ async def test_initialize_session_failure():
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("solomon.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("hermas.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
         with pytest.raises(RuntimeError, match="MCP initialize failed"):
             await _initialize_session(server)
 
@@ -73,7 +73,7 @@ async def test_initialize_session_no_session_id():
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("solomon.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("hermas.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
         with pytest.raises(RuntimeError, match="mcp-session-id"):
             await _initialize_session(server)
 
@@ -117,7 +117,7 @@ async def test_jsonrpc_success():
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("solomon.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("hermas.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
         result = await _jsonrpc(server, "tools/list", {})
         assert "tools" in result
         assert result["tools"][0]["name"] == "my_tool"
@@ -160,7 +160,7 @@ async def test_jsonrpc_retry_on_400():
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("solomon.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("hermas.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
         result = await _jsonrpc(server, "tools/list", {})
         assert isinstance(result, dict)  # _jsonrpc returns parsed["result"]
 
@@ -183,7 +183,7 @@ async def test_list_tools():
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("solomon.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("hermas.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
         tools = await list_tools(server)
         assert len(tools) == 1
         assert tools[0]["name"] == "my_tool"
@@ -207,6 +207,6 @@ async def test_call_tool():
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=False)
 
-    with patch("solomon.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
+    with patch("hermas.services.mcp_client.httpx.AsyncClient", return_value=mock_client):
         result = await call_tool(server, "my_tool", {"arg1": "val1"})
         assert "content" in result

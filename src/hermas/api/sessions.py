@@ -8,10 +8,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.api.dependencies import get_app_config, get_db, require_app_token
-from solomon.config import AppConfig
-from solomon.schemas.session import SessionCreateRequest, SessionCreateResponse
-from solomon.services import session_service
+from hermas.api.dependencies import get_app_config, get_db, require_app_token
+from hermas.config import AppConfig
+from hermas.schemas.session import SessionCreateRequest, SessionCreateResponse
+from hermas.services import session_service
 
 router = APIRouter(prefix="/api", tags=["sessions"])
 

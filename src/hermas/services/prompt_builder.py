@@ -5,9 +5,9 @@ from __future__ import annotations
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.config import AppConfig
-from solomon.services import mcp_client, skill_routing_service, skill_service
-from solomon.services.mcp_client import MCPServerConfig
+from hermas.config import AppConfig
+from hermas.services import mcp_client, skill_routing_service, skill_service
+from hermas.services.mcp_client import MCPServerConfig
 
 logger = structlog.get_logger()
 

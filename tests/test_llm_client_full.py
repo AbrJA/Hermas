@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from solomon.schemas.common import LLMUsage
-from solomon.services.llm_client import (
+from hermas.schemas.common import LLMUsage
+from hermas.services.llm_client import (
     _get_client,
     _parse_usage,
     chat_completion,
@@ -19,7 +19,7 @@ def test_get_client_no_key():
 
 
 def test_get_client_creates_client():
-    from solomon.services.llm_client import _clients
+    from hermas.services.llm_client import _clients
     _clients.clear()
     client = _get_client("https://api.openai.com", "test-key")
     assert client is not None
@@ -62,7 +62,7 @@ async def test_chat_completion_mocked():
     mock_client = AsyncMock()
     mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
-    with patch("solomon.services.llm_client._get_client", return_value=mock_client):
+    with patch("hermas.services.llm_client._get_client", return_value=mock_client):
         result = await chat_completion(
             base_url="https://api.openai.com",
             api_key="test-key",
@@ -107,7 +107,7 @@ async def test_route_skill_mocked():
     mock_client = AsyncMock()
     mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
 
-    with patch("solomon.services.llm_client._get_client", return_value=mock_client):
+    with patch("hermas.services.llm_client._get_client", return_value=mock_client):
         result = await route_skill(
             base_url="https://api.openai.com",
             api_key="test-key",

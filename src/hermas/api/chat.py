@@ -9,9 +9,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
-from solomon.api.dependencies import get_app_config, get_db, require_session
-from solomon.config import AppConfig
-from solomon.services import chat_service
+from hermas.api.dependencies import get_app_config, get_db, require_session
+from hermas.config import AppConfig
+from hermas.services import chat_service
 
 router = APIRouter(prefix="/api", tags=["chat"])
 

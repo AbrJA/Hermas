@@ -12,7 +12,7 @@ import structlog
 from openai import AsyncOpenAI
 from openai import NotFoundError
 
-from solomon.schemas.common import LLMResult, LLMUsage
+from hermas.schemas.common import LLMResult, LLMUsage
 
 logger = structlog.get_logger()
 
@@ -51,7 +51,7 @@ _clients: dict[tuple[str, str], AsyncOpenAI] = {}
 
 def _get_client(base_url: str, api_key: str) -> AsyncOpenAI:
     if not api_key.strip():
-        raise ValueError("No API key provided and SOLOMON_DEFAULT_API_KEY is not set")
+        raise ValueError("No API key provided and HERMAS_DEFAULT_API_KEY is not set")
 
     url = _normalize_openai_url(base_url)
     key = (url, api_key)
@@ -122,11 +122,11 @@ async def chat_completion(
             status_code=404,
             base_url=resolved_url,
             model=model,
-            hint="Check SOLOMON_LLM_BASE_URL and SOLOMON_DEFAULT_MODEL for provider compatibility",
+            hint="Check HERMAS_LLM_BASE_URL and HERMAS_DEFAULT_MODEL for provider compatibility",
         )
         raise RuntimeError(
             f"LLM endpoint/model not found (404). base_url='{resolved_url}', model='{model}'. "
-            "Check SOLOMON_LLM_BASE_URL and SOLOMON_DEFAULT_MODEL."
+            "Check HERMAS_LLM_BASE_URL and HERMAS_DEFAULT_MODEL."
         ) from exc
     elapsed = time.monotonic() - start
 
@@ -185,11 +185,11 @@ async def chat_completion_stream(
             status_code=404,
             base_url=resolved_url,
             model=model,
-            hint="Check SOLOMON_LLM_BASE_URL and SOLOMON_DEFAULT_MODEL for provider compatibility",
+            hint="Check HERMAS_LLM_BASE_URL and HERMAS_DEFAULT_MODEL for provider compatibility",
         )
         raise RuntimeError(
             f"LLM endpoint/model not found (404). base_url='{resolved_url}', model='{model}'. "
-            "Check SOLOMON_LLM_BASE_URL and SOLOMON_DEFAULT_MODEL."
+            "Check HERMAS_LLM_BASE_URL and HERMAS_DEFAULT_MODEL."
         ) from exc
     async for chunk in stream:
         if chunk.choices and chunk.choices[0].delta.content:

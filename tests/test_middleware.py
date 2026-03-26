@@ -1,6 +1,6 @@
 """Tests for error handler middleware."""
 
-from solomon.middleware.error_handler import ErrorHandlerMiddleware
+from hermas.middleware.error_handler import ErrorHandlerMiddleware
 
 
 def test_error_handler_middleware_exists():

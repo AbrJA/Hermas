@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.models.conversation import Conversation, Message
+from hermas.models.conversation import Conversation, Message
 
 
 def _safe_user_id(user_id: str) -> str:

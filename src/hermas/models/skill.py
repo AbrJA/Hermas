@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from solomon.models.base import Base
+from hermas.models.base import Base
 
 
 class Skill(Base):

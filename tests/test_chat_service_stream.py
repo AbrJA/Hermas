@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from solomon.schemas.common import LLMResult, LLMUsage
-from solomon.services.chat_service import (
+from hermas.schemas.common import LLMResult, LLMUsage
+from hermas.services.chat_service import (
     _chat_context,
     _chat_with_tools,
     complete_chat_stream,
@@ -22,8 +22,8 @@ async def test_chat_context(db_session, app_config):
     }
 
     with (
-        patch("solomon.services.chat_service.prompt_builder.build_system_prompt", new_callable=AsyncMock, return_value=("System", [])),
-        patch("solomon.services.chat_service.prompt_builder.append_mcp_context", new_callable=AsyncMock, return_value="System"),
+        patch("hermas.services.chat_service.prompt_builder.build_system_prompt", new_callable=AsyncMock, return_value=("System", [])),
+        patch("hermas.services.chat_service.prompt_builder.append_mcp_context", new_callable=AsyncMock, return_value="System"),
     ):
         ctx = await _chat_context(payload, app_config, db_session)
         assert ctx["model"] == "gpt-4"
@@ -47,14 +47,14 @@ async def test_chat_with_tools_no_mcp(app_config):
     }
 
     mock_result = LLMResult(content="Hello!", model="gpt-4", usage=LLMUsage())
-    with patch("solomon.services.chat_service.llm_client.chat_completion", new_callable=AsyncMock, return_value=mock_result):
+    with patch("hermas.services.chat_service.llm_client.chat_completion", new_callable=AsyncMock, return_value=mock_result):
         result = await _chat_with_tools(app_config, ctx)
         assert result == "Hello!"
 
 
 @pytest.mark.asyncio
 async def test_chat_with_tools_tool_call(app_config):
-    from solomon.services.mcp_client import MCPServerConfig
+    from hermas.services.mcp_client import MCPServerConfig
 
     ctx = {
         "messages": [{"role": "user", "content": "Query the DB"}],
@@ -81,8 +81,8 @@ async def test_chat_with_tools_tool_call(app_config):
         return result1 if call_count == 1 else result2
 
     with (
-        patch("solomon.services.chat_service.llm_client.chat_completion", side_effect=mock_completion),
-        patch("solomon.services.chat_service.mcp_client_mod.call_tool", new_callable=AsyncMock, return_value={"content": [{"type": "text", "text": "1"}]}),
+        patch("hermas.services.chat_service.llm_client.chat_completion", side_effect=mock_completion),
+        patch("hermas.services.chat_service.mcp_client_mod.call_tool", new_callable=AsyncMock, return_value={"content": [{"type": "text", "text": "1"}]}),
     ):
         result = await _chat_with_tools(app_config, ctx)
         assert result == "The result is 1."
@@ -97,9 +97,9 @@ async def test_complete_chat_stream(db_session, app_config):
             yield chunk
 
     with (
-        patch("solomon.services.chat_service.prompt_builder.build_system_prompt", new_callable=AsyncMock, return_value=("System", [])),
-        patch("solomon.services.chat_service.prompt_builder.append_mcp_context", new_callable=AsyncMock, return_value="System"),
-        patch("solomon.services.chat_service.llm_client.chat_completion_stream", side_effect=mock_stream),
+        patch("hermas.services.chat_service.prompt_builder.build_system_prompt", new_callable=AsyncMock, return_value=("System", [])),
+        patch("hermas.services.chat_service.prompt_builder.append_mcp_context", new_callable=AsyncMock, return_value="System"),
+        patch("hermas.services.chat_service.llm_client.chat_completion_stream", side_effect=mock_stream),
     ):
         payload = {"messages": [{"role": "user", "content": "Hi"}]}
         events = []

@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from solomon.services.mcp_client import MCPServerConfig
-from solomon.services.prompt_builder import (
+from hermas.services.mcp_client import MCPServerConfig
+from hermas.services.prompt_builder import (
     _build_skill_context,
     append_mcp_context,
     build_system_prompt,
@@ -20,7 +20,7 @@ async def test_build_skill_context_empty(db_session):
 
 @pytest.mark.asyncio
 async def test_build_skill_context_with_skills(db_session):
-    from solomon.services import skill_service
+    from hermas.services import skill_service
 
     await skill_service.create_skill(
         db_session,
@@ -35,7 +35,7 @@ async def test_build_skill_context_with_skills(db_session):
 
 @pytest.mark.asyncio
 async def test_build_system_prompt_no_skills(db_session, app_config):
-    with patch("solomon.services.prompt_builder.skill_routing_service.resolve_skill_ids", new_callable=AsyncMock, return_value=[]):
+    with patch("hermas.services.prompt_builder.skill_routing_service.resolve_skill_ids", new_callable=AsyncMock, return_value=[]):
         prompt, skill_ids = await build_system_prompt(
             {}, app_config, [{"role": "user", "content": "Hi"}],
             "test-key", "https://api.openai.com", "gpt-4", db_session,
@@ -47,7 +47,7 @@ async def test_build_system_prompt_no_skills(db_session, app_config):
 
 @pytest.mark.asyncio
 async def test_build_system_prompt_with_custom(db_session, app_config):
-    with patch("solomon.services.prompt_builder.skill_routing_service.resolve_skill_ids", new_callable=AsyncMock, return_value=[]):
+    with patch("hermas.services.prompt_builder.skill_routing_service.resolve_skill_ids", new_callable=AsyncMock, return_value=[]):
         prompt, _ = await build_system_prompt(
             {"systemPrompt": "Be creative"},
             app_config,
@@ -59,13 +59,13 @@ async def test_build_system_prompt_with_custom(db_session, app_config):
 
 @pytest.mark.asyncio
 async def test_build_system_prompt_with_skills(db_session, app_config):
-    from solomon.services import skill_service
+    from hermas.services import skill_service
 
     await skill_service.create_skill(
         db_session, skill_id="pb-skill", name="PB Skill", content="Special instructions"
     )
 
-    with patch("solomon.services.prompt_builder.skill_routing_service.resolve_skill_ids", new_callable=AsyncMock, return_value=["pb-skill"]):
+    with patch("hermas.services.prompt_builder.skill_routing_service.resolve_skill_ids", new_callable=AsyncMock, return_value=["pb-skill"]):
         prompt, skill_ids = await build_system_prompt(
             {}, app_config, [{"role": "user", "content": "Hi"}],
             "test-key", "https://api.openai.com", "gpt-4", db_session,
@@ -85,7 +85,7 @@ async def test_append_mcp_context_no_configs(db_session):
 async def test_append_mcp_context_with_tools(db_session):
     configs = {"test-server": MCPServerConfig(url="http://localhost:8000/mcp")}
 
-    with patch("solomon.services.prompt_builder.mcp_client.list_tools", new_callable=AsyncMock) as mock_list:
+    with patch("hermas.services.prompt_builder.mcp_client.list_tools", new_callable=AsyncMock) as mock_list:
         mock_list.return_value = [
             {"name": "query", "description": "Run a query", "inputSchema": {"properties": {"sql": {}}}}
         ]

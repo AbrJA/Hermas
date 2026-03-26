@@ -2,7 +2,7 @@
 
 import pytest
 
-from solomon.services import mcp_service
+from hermas.services import mcp_service
 
 
 @pytest.mark.asyncio

@@ -2,7 +2,7 @@
 
 import pytest
 
-from solomon.services import skill_service
+from hermas.services import skill_service
 
 
 @pytest.mark.asyncio
@@ -99,7 +99,7 @@ def test_parse_frontmatter_no_frontmatter():
 
 
 def test_normalize_skill_id():
-    from solomon.services.skill_service import _normalize_skill_id
+    from hermas.services.skill_service import _normalize_skill_id
 
     assert _normalize_skill_id("Hello World!") == "hello-world"
     assert _normalize_skill_id("ELI5 Expert") == "eli5-expert"

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from solomon.config import AppConfig
+from hermas.config import AppConfig
 
 _engine = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
@@ -15,7 +15,7 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None
 def _db_url(cfg: AppConfig) -> str:
     data_dir = Path(cfg.data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
-    db_path = data_dir / "solomon.db"
+    db_path = data_dir / "hermas.db"
     return f"sqlite+aiosqlite:///{db_path}"
 
 
@@ -30,7 +30,7 @@ async def init_engine(cfg: AppConfig) -> None:
     )
     _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
 
-    from solomon.models.base import Base
+    from hermas.models.base import Base
 
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from sqlalchemy import BigInteger, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from solomon.models.base import Base
+from hermas.models.base import Base
 
 
 class Session(Base):

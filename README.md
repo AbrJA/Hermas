@@ -39,7 +39,7 @@ Hermas is a modern backend and lightweight web UI designed for practical local d
 ## 📁 Project Layout
 
 ```
-solomon/
+hermas/
 ├── 📄 docker-compose.yml
 ├── 🐳 Dockerfile
 ├── 📦 pyproject.toml
@@ -51,7 +51,7 @@ solomon/
 │   ├── app.css
 │   ├── app.js
 │   └── index.html
-├── 🐍 src/solomon/
+├── 🐍 src/hermas/
 │   ├── config.py
 │   ├── database.py
 │   ├── main.py
@@ -109,13 +109,7 @@ HERMAS_SESSION_TTL_SECONDS=86400
 ### 3️⃣ Run the Application
 
 ```bash
-uv run src/solomon/main.py
-```
-
-Or use the script entrypoint:
-
-```bash
-uv run solomon
+uv run python -m hermas.main
 ```
 
 ✅ Visit **[http://localhost:8080](http://localhost:8080)** in your browser.
@@ -309,10 +303,10 @@ uv run ruff check src tests
 
 ### Architecture Notes
 
-- **API Layer** (`src/solomon/api/`) – Route handlers, dependency injection
-- **Services** (`src/solomon/services/`) – Business logic, orchestration
-- **Models** (`src/solomon/models/`) – SQLAlchemy ORM
-- **Schemas** (`src/solomon/schemas/`) – Request/response contracts
+- **API Layer** (`src/hermas/api/`) – Route handlers, dependency injection
+- **Services** (`src/hermas/services/`) – Business logic, orchestration
+- **Models** (`src/hermas/models/`) – SQLAlchemy ORM
+- **Schemas** (`src/hermas/schemas/`) – Request/response contracts
 - **Frontend** (`public/`) – Vanilla HTML/CSS/JS UI
 
 ## 🔧 Troubleshooting

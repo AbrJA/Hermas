@@ -7,8 +7,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.api.dependencies import get_db, require_session
-from solomon.services import conversation_service
+from hermas.api.dependencies import get_db, require_session
+from hermas.services import conversation_service
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 

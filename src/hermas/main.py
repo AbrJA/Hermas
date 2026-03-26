@@ -11,8 +11,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from solomon.config import AppConfig, get_config
-from solomon.database import close_engine, get_session_factory, init_engine
+from hermas.config import AppConfig, get_config
+from hermas.database import close_engine, get_session_factory, init_engine
 
 logger = structlog.get_logger()
 
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     # Seed skills from filesystem on first boot
     factory = get_session_factory()
     async with factory() as db:
-        from solomon.services import skill_service
+        from hermas.services import skill_service
 
         count = await skill_service.seed_from_directory(db, cfg.skills_dir)
         if count:
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
 
 async def _seed_mcp_servers(db, cfg: AppConfig):
     """Import existing data/mcp_servers/*.json into DB on first boot."""
-    from solomon.services import mcp_service
+    from hermas.services import mcp_service
 
     mcp_dir = Path(cfg.data_dir) / "mcp_servers"
     if not mcp_dir.is_dir():
@@ -91,12 +91,12 @@ def create_app() -> FastAPI:
     )
 
     # Error handler
-    from solomon.middleware.error_handler import ErrorHandlerMiddleware
+    from hermas.middleware.error_handler import ErrorHandlerMiddleware
 
     app.add_middleware(ErrorHandlerMiddleware)
 
     # API routers
-    from solomon.api import chat, conversations, health, mcp, sessions, skills
+    from hermas.api import chat, conversations, health, mcp, sessions, skills
 
     app.include_router(health.router)
     app.include_router(sessions.router)
@@ -116,7 +116,7 @@ def create_app() -> FastAPI:
 def cli():
     cfg = get_config()
     uvicorn.run(
-        "solomon.main:create_app",
+        "hermas.main:create_app",
         factory=True,
         host=cfg.host,
         port=cfg.port,

@@ -1,11 +1,11 @@
 """Tests for schemas to ensure coverage."""
 
-from solomon.schemas.chat import ChatRequest, ChatResponse, MCPServerPayload
-from solomon.schemas.common import LLMResult, LLMUsage
-from solomon.schemas.conversation import ConversationDetail, ConversationSummary
-from solomon.schemas.mcp import MCPCallToolRequest, MCPServerCreate, MCPToolRequest
-from solomon.schemas.session import SessionCreateRequest, SessionCreateResponse
-from solomon.schemas.skill import SkillCreateRequest
+from hermas.schemas.chat import ChatRequest, ChatResponse, MCPServerPayload
+from hermas.schemas.common import LLMResult, LLMUsage
+from hermas.schemas.conversation import ConversationDetail, ConversationSummary
+from hermas.schemas.mcp import MCPCallToolRequest, MCPServerCreate, MCPToolRequest
+from hermas.schemas.session import SessionCreateRequest, SessionCreateResponse
+from hermas.schemas.skill import SkillCreateRequest
 
 
 def test_chat_request():

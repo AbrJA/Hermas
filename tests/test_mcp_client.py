@@ -3,7 +3,7 @@
 
 import pytest
 
-from solomon.services.mcp_client import (
+from hermas.services.mcp_client import (
     MCPServerConfig,
     _extract_json_from_sse,
     _headers,

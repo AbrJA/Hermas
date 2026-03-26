@@ -1,6 +1,6 @@
 """Tests for LLM client helpers."""
 
-from solomon.services.llm_client import (
+from hermas.services.llm_client import (
     _is_default_openai,
     _normalize_openai_url,
     _sanitize_base_url,

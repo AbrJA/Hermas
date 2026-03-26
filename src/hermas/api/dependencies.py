@@ -6,9 +6,9 @@ from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException
 
-from solomon.config import AppConfig, get_config
-from solomon.database import get_session_factory
-from solomon.services import session_service
+from hermas.config import AppConfig, get_config
+from hermas.database import get_session_factory
+from hermas.services import session_service
 
 # ---------------------------------------------------------------------------
 # Config

@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.models.session import Session
+from hermas.models.session import Session
 
 
 def _now_unix() -> int:

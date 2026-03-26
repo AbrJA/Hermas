@@ -2,7 +2,7 @@
 
 import pytest
 
-from solomon.services.chat_service import (
+from hermas.services.chat_service import (
     _conversation_id,
     _extract_tool_call,
     _format_tool_result,

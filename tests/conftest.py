@@ -10,8 +10,8 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from solomon.config import AppConfig
-from solomon.models.base import Base
+from hermas.config import AppConfig
+from hermas.models.base import Base
 
 
 @pytest.fixture(scope="session")
@@ -29,7 +29,7 @@ def app_config() -> AppConfig:
         llm_base_url="https://api.openai.com",
         default_model="gpt-4.1-mini",
         default_api_key="test-key-123",
-        system_prompt="You are Solomon, a test assistant.",
+        system_prompt="You are Hermas, a test assistant.",
         skills_dir="skills",
         data_dir="test_data",
         cors_origin="*",
@@ -65,9 +65,9 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
 @pytest_asyncio.fixture
 async def client(db_engine, app_config, monkeypatch) -> AsyncGenerator[AsyncClient, None]:
     """Test client with in-memory DB and mocked config."""
-    from solomon import config as config_mod
-    from solomon import database as db_mod
-    from solomon.main import create_app
+    from hermas import config as config_mod
+    from hermas import database as db_mod
+    from hermas.main import create_app
 
     # Override config
     monkeypatch.setattr(config_mod, "_config", app_config)

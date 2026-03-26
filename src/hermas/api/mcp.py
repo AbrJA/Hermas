@@ -7,9 +7,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.api.dependencies import get_db, require_session
-from solomon.schemas.mcp import MCPCallToolRequest, MCPServerCreate, MCPToolRequest
-from solomon.services import mcp_service
+from hermas.api.dependencies import get_db, require_session
+from hermas.schemas.mcp import MCPCallToolRequest, MCPServerCreate, MCPToolRequest
+from hermas.services import mcp_service
 
 router = APIRouter(prefix="/api/mcp", tags=["mcp"])
 

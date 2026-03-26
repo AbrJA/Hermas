@@ -7,10 +7,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.api.dependencies import get_app_config, get_db, require_session
-from solomon.config import AppConfig
-from solomon.schemas.skill import SkillCreateRequest
-from solomon.services import skill_service
+from hermas.api.dependencies import get_app_config, get_db, require_session
+from hermas.config import AppConfig
+from hermas.schemas.skill import SkillCreateRequest
+from hermas.services import skill_service
 
 router = APIRouter(prefix="/api", tags=["skills"])
 

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.config import AppConfig
-from solomon.services import llm_client, skill_service
+from hermas.config import AppConfig
+from hermas.services import llm_client, skill_service
 
 
 def _bool_value(value, default: bool) -> bool:

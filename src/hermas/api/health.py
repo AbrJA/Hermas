@@ -7,15 +7,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from solomon.api.dependencies import get_app_config
-from solomon.config import AppConfig
+from hermas.api.dependencies import get_app_config
+from hermas.config import AppConfig
 
 router = APIRouter(prefix="/api", tags=["health"])
 
 
 @router.get("/health")
 async def health():
-    return {"status": "ok", "service": "solomon"}
+    return {"status": "ok", "service": "hermas"}
 
 
 @router.get("/readiness")

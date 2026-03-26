@@ -3,12 +3,12 @@
 
 import pytest
 
-from solomon.api.dependencies import get_app_config, require_app_token, require_session
-from solomon.config import AppConfig
+from hermas.api.dependencies import get_app_config, require_app_token, require_session
+from hermas.config import AppConfig
 
 
 def test_get_app_config(monkeypatch):
-    from solomon import config as config_mod
+    from hermas import config as config_mod
     cfg = AppConfig(_env_file=None, default_api_key="test")
     monkeypatch.setattr(config_mod, "_config", cfg)
     result = get_app_config()
@@ -73,7 +73,7 @@ async def test_require_session_auth_disabled_anonymous(app_config, db_session):
 
 @pytest.mark.asyncio
 async def test_require_session_auth_enabled_valid(db_session):
-    from solomon.services import session_service
+    from hermas.services import session_service
 
     cfg = AppConfig(_env_file=None, require_auth=True)
     token = await session_service.create_session(db_session, "bob", 3600)

@@ -1,6 +1,6 @@
 """Tests for prompt builder."""
 
-from solomon.services.prompt_builder import _bool_value, build_mcp_server_configs
+from hermas.services.prompt_builder import _bool_value, build_mcp_server_configs
 
 
 def test_bool_value_true_variants():

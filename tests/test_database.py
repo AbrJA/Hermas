@@ -28,7 +28,7 @@ async def test_fts_table_exists(db_session: AsyncSession):
 @pytest.mark.asyncio
 async def test_insert_and_query(db_session: AsyncSession):
     """Verify basic insert/query works."""
-    from solomon.models.skill import Skill
+    from hermas.models.skill import Skill
 
     skill = Skill(id="test-1", user_id="__global__", name="Test", description="Test skill", content="Do stuff")
     db_session.add(skill)

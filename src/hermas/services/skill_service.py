@@ -10,7 +10,7 @@ import structlog
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.models.skill import Skill
+from hermas.models.skill import Skill
 
 logger = structlog.get_logger()
 

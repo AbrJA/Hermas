@@ -12,11 +12,11 @@ import uuid
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from solomon.config import AppConfig
-from solomon.schemas.common import LLMUsage
-from solomon.services import conversation_service, llm_client, prompt_builder, stream_formatter
-from solomon.services import mcp_client as mcp_client_mod
-from solomon.services.mcp_client import MCPServerConfig
+from hermas.config import AppConfig
+from hermas.schemas.common import LLMUsage
+from hermas.services import conversation_service, llm_client, prompt_builder, stream_formatter
+from hermas.services import mcp_client as mcp_client_mod
+from hermas.services.mcp_client import MCPServerConfig
 
 logger = structlog.get_logger()
 

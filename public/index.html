@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Solomon</title>
+    <title>Hermas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,9 +19,9 @@
         <div class="rail-header">
           <div class="brand">
             <div class="brand-dot"></div>
-            <h1>Solomon</h1>
+            <h1>Hermas</h1>
           </div>
-          <button id="historyToggle" class="secondary-btn rail-toggle" type="button" aria-expanded="true" aria-controls="historyRail">Hide history</button>
+          <button id="historyToggle" class="secondary-btn rail-toggle" type="button" aria-expanded="true" aria-controls="historyRail">Hide</button>
           <p class="subtitle">Your recent conversations</p>
         </div>
 
@@ -87,9 +87,11 @@
               <button id="refreshMcpButton" class="secondary-btn" type="button">Refresh list</button>
               <button id="loadToolsButton" class="secondary-btn" type="button">Load tools</button>
             </div>
-            <pre id="mcpToolsOutput" class="tools-output" aria-live="polite"></pre>
-            <details class="mcp-form-details">
-              <summary class="secondary-btn">Add / Edit server</summary>
+            <div id="mcpToolsOutput" class="tools-output" aria-live="polite"></div>
+            <div class="mcp-form-toggle">
+              <button id="mcpFormToggle" class="secondary-btn" type="button">Add / Edit server</button>
+            </div>
+            <div id="mcpFormSection" class="mcp-form-section">
               <div class="mcp-form">
                 <input id="mcpFormId" type="hidden" />
                 <label for="mcpFormName">Name</label>
@@ -100,12 +102,13 @@
                 <input id="mcpFormAuthName" placeholder="Authorization" />
                 <label for="mcpFormAuthValue">Auth header value</label>
                 <input id="mcpFormAuthValue" type="password" placeholder="Bearer secret" />
-                <div class="selector-actions">
+                <div class="mcp-form-actions">
                   <button id="saveMcpButton" class="secondary-btn" type="button">Save</button>
                   <button id="deleteMcpButton" class="secondary-btn danger-btn" type="button">Delete</button>
+                  <button id="cancelMcpButton" class="secondary-btn" type="button">Cancel</button>
                 </div>
               </div>
-            </details>
+            </div>
           </article>
 
           <article id="accessPanel" class="selector-panel" hidden>
@@ -118,6 +121,8 @@
           </article>
         </section>
 
+        <div id="settingsBackdrop" class="settings-backdrop"></div>
+
         <section id="messages" class="messages" aria-live="polite"></section>
 
         <form id="chatForm" class="composer">
@@ -125,7 +130,7 @@
             <textarea
               id="messageInput"
               rows="1"
-              placeholder="Message Solomon..."
+              placeholder="Message Hermas..."
               required
             ></textarea>
             <button id="sendButton" type="submit" aria-label="Send">

@@ -64,6 +64,10 @@ const el = {
   mcpFormAuthValue: document.getElementById('mcpFormAuthValue'),
   saveMcpButton: document.getElementById('saveMcpButton'),
   deleteMcpButton: document.getElementById('deleteMcpButton'),
+  cancelMcpButton: document.getElementById('cancelMcpButton'),
+  mcpFormToggle: document.getElementById('mcpFormToggle'),
+  mcpFormSection: document.getElementById('mcpFormSection'),
+  settingsBackdrop: document.getElementById('settingsBackdrop'),
 };
 
 const conversation = [];
@@ -141,7 +145,7 @@ function setHistoryVisible(isVisible) {
   state.historyVisible = isVisible;
   el.appShell.classList.toggle('history-collapsed', !isVisible);
   el.historyToggle.setAttribute('aria-expanded', String(isVisible));
-  el.historyToggle.textContent = isVisible ? 'Hide history' : 'Show';
+  el.historyToggle.textContent = isVisible ? 'Hide' : 'Show';
 }
 
 function sortConversations(conversations) {
@@ -193,6 +197,14 @@ function togglePanel(panelName) {
     const shouldOpen = entry.name === next;
     entry.panel.hidden = !shouldOpen;
     entry.toggle.setAttribute('aria-expanded', String(shouldOpen));
+    entry.toggle.classList.toggle('active', shouldOpen);
+  }
+  const hasOpen = next !== '';
+  el.controlPopovers.classList.toggle('open', hasOpen);
+  el.settingsBackdrop.classList.toggle('visible', hasOpen);
+  if (hasOpen) {
+    const header = document.querySelector('.chat-header');
+    el.controlPopovers.style.top = header.offsetHeight + 'px';
   }
 }
 
@@ -206,7 +218,10 @@ function closePanels() {
   ]) {
     entry.panel.hidden = true;
     entry.toggle.setAttribute('aria-expanded', 'false');
+    entry.toggle.classList.remove('active');
   }
+  el.controlPopovers.classList.remove('open');
+  el.settingsBackdrop.classList.remove('visible');
 }
 
 function registerToggleHandlers() {
@@ -225,6 +240,8 @@ function registerToggleHandlers() {
     closePanels();
   });
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closePanels(); });
+
+  el.settingsBackdrop.addEventListener('click', closePanels);
 }
 
 function setSending(isSending) { state.isSending = isSending; el.sendButton.disabled = isSending; }
@@ -384,9 +401,9 @@ function startNewConversation() {
 
 async function handleLoadTools() {
   const server = selectedMcpServer();
-  if (!server) { el.mcpToolsOutput.textContent = 'Select an MCP server first.'; return; }
+  if (!server) { el.mcpToolsOutput.innerHTML = '<p class="tools-placeholder">Select an MCP server first.</p>'; return; }
   setStatus('Loading MCP tools...');
-  el.mcpToolsOutput.textContent = '';
+  el.mcpToolsOutput.innerHTML = '<p class="tools-placeholder">Loading tools...</p>';
   try {
     const response = await fetch('/api/mcp/tools', {
       method: 'POST',
@@ -395,11 +412,55 @@ async function handleLoadTools() {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || data.error || 'Failed to load tools');
-    el.mcpToolsOutput.textContent = JSON.stringify(data.tools, null, 2);
+    renderMcpTools(data.tools || []);
     setStatus('MCP tools loaded.');
   } catch (error) {
-    el.mcpToolsOutput.textContent = String(error.message || error);
+    el.mcpToolsOutput.innerHTML = `<p class="tools-placeholder">${String(error.message || error)}</p>`;
     setStatus('Failed to load MCP tools.');
+  }
+}
+
+function renderMcpTools(tools) {
+  el.mcpToolsOutput.innerHTML = '';
+  if (!tools.length) {
+    el.mcpToolsOutput.innerHTML = '<p class="tools-placeholder">No tools available.</p>';
+    return;
+  }
+  for (const tool of tools) {
+    const card = document.createElement('div');
+    card.className = 'mcp-tool-card';
+    const name = document.createElement('div');
+    name.className = 'mcp-tool-name';
+    name.textContent = tool.name || 'Unnamed tool';
+    card.appendChild(name);
+    if (tool.description) {
+      const desc = document.createElement('div');
+      desc.className = 'mcp-tool-desc';
+      desc.textContent = tool.description;
+      card.appendChild(desc);
+    }
+    const schema = tool.inputSchema || tool.input_schema || {};
+    const props = schema.properties;
+    if (props && Object.keys(props).length > 0) {
+      const paramsDiv = document.createElement('div');
+      paramsDiv.className = 'mcp-tool-params';
+      const title = document.createElement('div');
+      title.className = 'mcp-tool-params-title';
+      title.textContent = 'Parameters';
+      paramsDiv.appendChild(title);
+      const required = new Set(schema.required || []);
+      for (const [paramName, paramDef] of Object.entries(props)) {
+        const param = document.createElement('div');
+        param.className = 'mcp-tool-param';
+        const type = paramDef.type || 'any';
+        const req = required.has(paramName) ? ' *' : '';
+        const descText = paramDef.description ? ` \u2014 ${paramDef.description}` : '';
+        param.innerHTML = `<code>${paramName}</code> <span style="opacity:0.6">${type}${req}</span>${descText}`;
+        paramsDiv.appendChild(param);
+      }
+      card.appendChild(paramsDiv);
+    }
+    el.mcpToolsOutput.appendChild(card);
   }
 }
 
@@ -450,6 +511,8 @@ async function handleSaveMcpServer() {
     el.mcpFormUrl.value = '';
     el.mcpFormAuthName.value = '';
     el.mcpFormAuthValue.value = '';
+    el.mcpFormSection.classList.remove('open');
+    if (el.mcpFormToggle) el.mcpFormToggle.textContent = 'Add / Edit server';
     setStatus(`MCP server "${data.server?.name}" saved.`);
   } catch (error) {
     setStatus(`Save error: ${error.message}`);
@@ -516,6 +579,7 @@ async function handleSend(event) {
     let latestEvent = '';
     let answer = '';
     const toolSteps = [];
+    const toolNames = [];
 
     for (const line of lines) {
       if (line.startsWith('event: ')) { latestEvent = line.slice(7).trim(); continue; }
@@ -533,6 +597,7 @@ async function handleSend(event) {
       if (latestEvent === 'tool_start') {
         const step = `Calling tool: ${parsed.tool}`;
         toolSteps.push(step);
+        toolNames.push(parsed.tool);
         assistantBody.innerHTML = '';
         const indicator = document.createElement('div');
         indicator.className = 'tool-progress';
@@ -578,7 +643,22 @@ async function handleSend(event) {
     }
 
     const finalAnswer = answer || assistantBody.textContent || '(Empty response)';
-    assistantBody.textContent = finalAnswer;
+    assistantBody.innerHTML = '';
+    if (toolNames.length > 0) {
+      const summary = document.createElement('div');
+      summary.className = 'tool-calls-summary';
+      for (const name of toolNames) {
+        const chip = document.createElement('span');
+        chip.className = 'tool-call-chip';
+        chip.textContent = name;
+        summary.appendChild(chip);
+      }
+      assistantBody.appendChild(summary);
+    }
+    const textDiv = document.createElement('div');
+    textDiv.className = 'message-text';
+    textDiv.textContent = finalAnswer;
+    assistantBody.appendChild(textDiv);
     conversation.push({ role: 'assistant', content: finalAnswer });
     await loadConversationHistory();
     const skillSuffix = appliedSkillIds.length ? ` Skills used: ${appliedSkillIds.join(', ')}` : state.autoSkillRouting ? ' No skill matched' : '';
@@ -648,6 +728,19 @@ async function bootstrap() {
   el.uploadSkillButton?.addEventListener('click', handleUploadSkill);
   el.saveMcpButton?.addEventListener('click', handleSaveMcpServer);
   el.deleteMcpButton?.addEventListener('click', handleDeleteMcpServer);
+  el.mcpFormToggle?.addEventListener('click', () => {
+    el.mcpFormSection.classList.toggle('open');
+    el.mcpFormToggle.textContent = el.mcpFormSection.classList.contains('open') ? 'Cancel' : 'Add / Edit server';
+  });
+  el.cancelMcpButton?.addEventListener('click', () => {
+    el.mcpFormSection.classList.remove('open');
+    el.mcpFormToggle.textContent = 'Add / Edit server';
+    el.mcpFormId.value = '';
+    el.mcpFormName.value = '';
+    el.mcpFormUrl.value = '';
+    el.mcpFormAuthName.value = '';
+    el.mcpFormAuthValue.value = '';
+  });
   el.chatForm.addEventListener('submit', handleSend);
 }
 

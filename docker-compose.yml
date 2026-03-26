@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    container_name: solomon-app
+    container_name: hermas-app
     env_file:
       - .env
     volumes:
@@ -11,7 +11,7 @@ services:
 
   nginx:
     image: nginx:1.27-alpine
-    container_name: solomon-nginx
+    container_name: hermas-nginx
     ports:
       - "8080:80"
     volumes:

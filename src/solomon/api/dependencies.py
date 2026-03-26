@@ -42,7 +42,7 @@ async def require_app_token(
     if not cfg.require_auth:
         return
     if not cfg.app_api_token.strip():
-        raise HTTPException(500, detail="Server auth is enabled but SOLOMON_APP_API_TOKEN is missing")
+        raise HTTPException(500, detail="Server auth is enabled but HERMAS_APP_API_TOKEN is missing")
     if x_app_token != cfg.app_api_token:
         raise HTTPException(401, detail="Invalid app token")
 

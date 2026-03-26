@@ -1,1 +1,1 @@
-"""Solomon – conversational AI assistant."""
+"""Hermas – conversational AI assistant."""

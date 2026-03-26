@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="SOLOMON_",
+        env_prefix="HERMAS_",
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
@@ -19,7 +19,7 @@ class AppConfig(BaseSettings):
     default_model: str = "gpt-4o-mini"
     default_api_key: str = ""
     system_prompt: str = (
-        "You are Solomon, a helpful assistant. Keep answers accurate, concise, and actionable."
+        "You are Hermas, a helpful assistant. Keep answers accurate, concise, and actionable."
     )
     skills_dir: str = "skills"
     data_dir: str = "data"

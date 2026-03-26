@@ -1,4 +1,4 @@
-# 🧠 Solomon
+# 🧠 Hermas
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
@@ -7,7 +7,7 @@
 
 > **Production-ready conversational AI assistant** with streaming responses, skill routing, MCP tool integration, and persistent conversation history.
 
-Solomon is a modern backend and lightweight web UI designed for practical local development and extensible production deployments. It combines real-time chat streaming via Server-Sent Events, optional skill-based prompt augmentation, MCP server tool integration, and async persistence—all with strong test coverage.
+Hermas is a modern backend and lightweight web UI designed for practical local development and extensible production deployments. It combines real-time chat streaming via Server-Sent Events, optional skill-based prompt augmentation, MCP server tool integration, and async persistence—all with strong test coverage.
 
 ---
 
@@ -83,27 +83,27 @@ Create `.env` in the project root:
 
 ```env
 # Server
-SOLOMON_HOST=0.0.0.0
-SOLOMON_PORT=8080
+HERMAS_HOST=0.0.0.0
+HERMAS_PORT=8080
 
 # LLM Provider
-SOLOMON_LLM_BASE_URL=https://api.openai.com
-SOLOMON_DEFAULT_MODEL=gpt-4o-mini
-SOLOMON_DEFAULT_API_KEY=your_api_key_here
+HERMAS_LLM_BASE_URL=https://api.openai.com
+HERMAS_DEFAULT_MODEL=gpt-4o-mini
+HERMAS_DEFAULT_API_KEY=your_api_key_here
 
 # Prompting
-SOLOMON_SYSTEM_PROMPT=You are Solomon, a helpful assistant. Keep answers accurate, concise, and actionable.
+HERMAS_SYSTEM_PROMPT=You are Hermas, a helpful assistant. Keep answers accurate, concise, and actionable.
 
 # Features
-SOLOMON_SKILLS_DIR=skills
-SOLOMON_DATA_DIR=data
-SOLOMON_CORS_ORIGIN=*
-SOLOMON_REQUEST_TIMEOUT_SECONDS=30
+HERMAS_SKILLS_DIR=skills
+HERMAS_DATA_DIR=data
+HERMAS_CORS_ORIGIN=*
+HERMAS_REQUEST_TIMEOUT_SECONDS=30
 
 # Security
-SOLOMON_REQUIRE_AUTH=false
-SOLOMON_APP_API_TOKEN=
-SOLOMON_SESSION_TTL_SECONDS=86400
+HERMAS_REQUIRE_AUTH=false
+HERMAS_APP_API_TOKEN=
+HERMAS_SESSION_TTL_SECONDS=86400
 ```
 
 ### 3️⃣ Run the Application
@@ -154,7 +154,7 @@ Includes:
 
 ### 🔌 MCP (Model Context Protocol)
 
-Solomon integrates remote MCP servers for runtime tools:
+Hermas integrates remote MCP servers for runtime tools:
 
 - Register MCP server configs (per user)
 - Discover available tools via `/api/mcp/tools`
@@ -169,27 +169,27 @@ Solomon integrates remote MCP servers for runtime tools:
 
 ## ⚙️ Configuration
 
-All settings load from `.env` with the `SOLOMON_` prefix.
+All settings load from `.env` with the `HERMAS_` prefix.
 
 ### 🔧 Core Settings
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `SOLOMON_HOST` | Server bind host | `0.0.0.0` |
-| `SOLOMON_PORT` | Server bind port | `8080` |
-| `SOLOMON_LLM_BASE_URL` | LLM provider URL | `https://api.openai.com` |
-| `SOLOMON_DEFAULT_MODEL` | Default model/deployment | `gpt-4o-mini` |
-| `SOLOMON_DEFAULT_API_KEY` | Backend API key | *(required)* |
-| `SOLOMON_SYSTEM_PROMPT` | Base assistant prompt | *(see example)* |
-| `SOLOMON_REQUEST_TIMEOUT_SECONDS` | Request timeout | `30` |
+| `HERMAS_HOST` | Server bind host | `0.0.0.0` |
+| `HERMAS_PORT` | Server bind port | `8080` |
+| `HERMAS_LLM_BASE_URL` | LLM provider URL | `https://api.openai.com` |
+| `HERMAS_DEFAULT_MODEL` | Default model/deployment | `gpt-4o-mini` |
+| `HERMAS_DEFAULT_API_KEY` | Backend API key | *(required)* |
+| `HERMAS_SYSTEM_PROMPT` | Base assistant prompt | *(see example)* |
+| `HERMAS_REQUEST_TIMEOUT_SECONDS` | Request timeout | `30` |
 
 ### 🔐 Auth Settings
 
 | Variable | Purpose | Default |
 |----------|---------|---------|
-| `SOLOMON_REQUIRE_AUTH` | Enforce auth checks | `false` |
-| `SOLOMON_APP_API_TOKEN` | App-level access token | *(optional)* |
-| `SOLOMON_SESSION_TTL_SECONDS` | Session lifetime | `86400` |
+| `HERMAS_REQUIRE_AUTH` | Enforce auth checks | `false` |
+| `HERMAS_APP_API_TOKEN` | App-level access token | *(optional)* |
+| `HERMAS_SESSION_TTL_SECONDS` | Session lifetime | `86400` |
 
 ## 🔌 API Endpoints
 
@@ -322,14 +322,14 @@ uv run ruff check src tests
 **Error:** Provider returns 404 when calling the model.
 
 **Check:**
-- ✅ `SOLOMON_LLM_BASE_URL` is correct
-- ✅ `SOLOMON_DEFAULT_MODEL` exists and is enabled
+- ✅ `HERMAS_LLM_BASE_URL` is correct
+- ✅ `HERMAS_DEFAULT_MODEL` exists and is enabled
 - ✅ API key belongs to the right project/account
 
 **For OpenAI:**
 ```env
-SOLOMON_LLM_BASE_URL=https://api.openai.com
-SOLOMON_DEFAULT_MODEL=gpt-4o-mini
+HERMAS_LLM_BASE_URL=https://api.openai.com
+HERMAS_DEFAULT_MODEL=gpt-4o-mini
 ```
 
 ### ❌ Empty Streamed Responses
@@ -347,7 +347,7 @@ SOLOMON_DEFAULT_MODEL=gpt-4o-mini
 
 ### ❌ Auth Failures
 
-**If** `SOLOMON_REQUIRE_AUTH=true`:
+**If** `HERMAS_REQUIRE_AUTH=true`:
 
 Required headers on every request:
 - `X-App-Token` (session creation, if configured)
@@ -375,7 +375,7 @@ uv run pytest tests/ -v
 
 ## 📄 License
 
-Solomon is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+Hermas is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
 
 ### Summary
 
@@ -390,7 +390,7 @@ This software is free and open-source under the GPL-3.0 license:
 ### Full License Text
 
 ```
-Solomon - Conversational AI Assistant
+Hermas - Conversational AI Assistant
 Copyright (c) 2026 AbrJA
 
 This program is free software: you can redistribute it and/or modify
@@ -420,4 +420,4 @@ Built with ❤️ using:
 
 ---
 
-**Made with ☕ by the Solomon team**
+**Made with ☕ by the Hermas team**

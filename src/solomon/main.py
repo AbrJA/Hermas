@@ -75,7 +75,7 @@ def create_app() -> FastAPI:
     cfg = get_config()
 
     app = FastAPI(
-        title="Solomon",
+        title="Hermas",
         version="0.1.0",
         description="Conversational AI assistant with skills and MCP tool integration.",
         lifespan=lifespan,

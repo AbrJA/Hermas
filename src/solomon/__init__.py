@@ -1,0 +1,1 @@
+"""Solomon – conversational AI assistant."""

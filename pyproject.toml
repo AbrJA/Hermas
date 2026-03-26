@@ -1,5 +1,5 @@
 [project]
-name = "solomon"
+name = "hermas"
 version = "0.1.0"
 description = "Production-ready conversational AI assistant with skills, MCP tool integration, and conversation persistence."
 authors = [{ name = "AbrJA", email = "abraham.jaimes.mx@gmail.com" }]
@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-solomon = "solomon.main:cli"
+hermas = "hermas.main:cli"
 
 [dependency-groups]
 dev = [
@@ -37,7 +37,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/solomon"]
+packages = ["src/hermas"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -54,7 +54,7 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "RUF"]
 ignore = ["E501", "B008", "RUF002", "RUF003", "N815", "RUF005", "SIM117"]
 
 [tool.coverage.run]
-source = ["solomon"]
+source = ["hermas"]
 omit = ["*/tests/*", "*/alembic/*"]
 
 [tool.coverage.report]

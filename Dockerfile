@@ -20,4 +20,4 @@ COPY .env.example ./
 
 EXPOSE 8080
 
-CMD ["uv", "run", "solomon"]
+CMD ["uv", "run", "hermas"]

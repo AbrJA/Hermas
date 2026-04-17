@@ -19,8 +19,9 @@ router = APIRouter(prefix="/api", tags=["skills"])
 async def list_skills(
     cfg: Annotated[AppConfig, Depends(get_app_config)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    user_id: Annotated[str, Depends(require_session)],
 ):
-    skills = await skill_service.list_skills(db)
+    skills = await skill_service.list_skills(db, user_id=user_id)
     return {"skills": [{"id": s["id"], "name": s["name"], "description": s["description"], "updatedAt": s["updatedAt"]} for s in skills]}
 
 
@@ -28,8 +29,9 @@ async def list_skills(
 async def get_skill(
     skill_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
+    user_id: Annotated[str, Depends(require_session)],
 ):
-    skill = await skill_service.get_skill(db, skill_id)
+    skill = await skill_service.get_skill(db, skill_id, user_id=user_id)
     if skill is None:
         raise HTTPException(404, detail="Skill not found")
     return {
@@ -52,7 +54,7 @@ async def create_skill(
         name=body.name,
         description=body.description,
         content=body.content,
-        user_id="__global__",
+        user_id=user_id,
     )
     return {"skill": result}
 
@@ -67,7 +69,7 @@ async def upload_skill(
         raise HTTPException(400, detail="Only .md files are accepted")
     raw = await file.read()
     markdown = raw.decode("utf-8")
-    result = await skill_service.upload_skill_md(db, markdown, user_id="__global__")
+    result = await skill_service.upload_skill_md(db, markdown, user_id=user_id)
     return {"skill": result}
 
 
@@ -77,7 +79,7 @@ async def delete_skill(
     db: Annotated[AsyncSession, Depends(get_db)],
     user_id: Annotated[str, Depends(require_session)],
 ):
-    deleted = await skill_service.delete_skill(db, skill_id)
+    deleted = await skill_service.delete_skill(db, skill_id, user_id=user_id)
     if not deleted:
         raise HTTPException(404, detail="Skill not found")
     return {"deleted": True}

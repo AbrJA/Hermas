@@ -14,7 +14,7 @@ class MCPServer(Base):
     __tablename__ = "mcp_servers"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    user_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(128), primary_key=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(256), nullable=False, default="MCP Server")
     url: Mapped[str] = mapped_column(Text, nullable=False)
     auth_header_name: Mapped[str] = mapped_column(String(128), nullable=False, default="")

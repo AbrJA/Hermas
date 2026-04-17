@@ -25,7 +25,7 @@ async def test_chat_context(db_session, app_config):
         patch("hermas.services.chat_service.prompt_builder.build_system_prompt", new_callable=AsyncMock, return_value=("System", [])),
         patch("hermas.services.chat_service.prompt_builder.append_mcp_context", new_callable=AsyncMock, return_value="System"),
     ):
-        ctx = await _chat_context(payload, app_config, db_session)
+        ctx = await _chat_context(payload, "alice", app_config, db_session)
         assert ctx["model"] == "gpt-4"
         assert ctx["temperature"] == 0.5
         assert ctx["max_tokens"] == 500

@@ -249,3 +249,74 @@ async def route_skill(
 
     chosen = re.sub(r"[\"'.,!;:\n]", "", result.content).strip().lower()
     return chosen if chosen in valid_ids else ""
+
+
+async def route_skills(
+    *,
+    base_url: str,
+    api_key: str,
+    model: str,
+    query: str,
+    skills: list,
+    max_count: int = 2,
+    timeout_seconds: int = 10,
+) -> list[str]:
+    """Route query to multiple skills (up to max_count).
+    
+    Returns a list of skill IDs that apply to the current query.
+    """
+    if not skills or not query.strip():
+        return []
+
+    valid_ids = {s.id for s in skills}
+    skill_lines = "\n".join(f"{s.id}: {s.name} - {s.description}" for s in skills)
+    max_count_clamped = max(1, min(max_count, len(skills)))
+
+    routing_messages = [
+        {
+            "role": "user",
+            "content": (
+                f"Current user request (this turn only): {query}\n\n"
+                f"Available skills:\n{skill_lines}\n\n"
+                f"Select up to {max_count_clamped} skill IDs that apply to this request. "
+                "Only select skills if clearly needed. "
+                "If none apply, reply 'none'. "
+                "Reply with a comma-separated list of skill IDs only (e.g., 'skill-a,skill-b' or 'none')."
+            ),
+        }
+    ]
+
+    try:
+        result = await chat_completion(
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            messages=routing_messages,
+            system_prompt=(
+                "You are a skill router. Select skills based only on the current user request. "
+                "Return a comma-separated list of skill IDs that apply, or 'none' if no skills apply. "
+                "Never return more than the specified maximum. "
+                "Return ONLY the ID list or 'none' and nothing else."
+            ),
+            temperature=0.0,
+            max_tokens=50,
+            timeout_seconds=timeout_seconds,
+        )
+    except Exception as exc:
+        logger.warning("skill_routing_failed", error=str(exc))
+        return []
+
+    # Parse comma-separated response, sanitize, validate against available skills
+    response_text = result.content.strip().lower()
+    if response_text == "none":
+        return []
+
+    selected = []
+    for skill_id in response_text.split(","):
+        cleaned_id = re.sub(r"[\"'.,!;:\s]", "", skill_id).strip()
+        if cleaned_id and cleaned_id in valid_ids:
+            selected.append(cleaned_id)
+            if len(selected) >= max_count_clamped:
+                break
+
+    return selected

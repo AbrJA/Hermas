@@ -191,6 +191,9 @@ h2 { font-size: 1rem; }
 /* Composer */
 
 .composer { padding: 12px 20px 16px; border-top: 1px solid var(--border); background: var(--surface); }
+.composer-attachment-row { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+.composer-attachment-row label { margin: 0; font-size: 0.74rem; color: var(--text-soft); white-space: nowrap; }
+.composer-attachment-row input[type='file'] { flex: 1; padding: 5px 8px; font-size: 0.78rem; }
 .composer-inner { display: flex; align-items: flex-end; gap: 8px; padding: 6px 6px 6px 16px; border: 1.5px solid var(--border); border-radius: 24px; background: var(--surface); transition: border-color 0.15s, box-shadow 0.15s; }
 .composer-inner:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 .composer-inner textarea { flex: 1; border: none; background: transparent; resize: none; min-height: 24px; max-height: 160px; padding: 8px 0; font: inherit; font-size: 0.9rem; color: var(--text); line-height: 1.5; width: 100%; }
@@ -289,4 +292,6 @@ button:disabled { cursor: not-allowed; opacity: 0.5; transform: none; }
   .chat-header { flex-direction: column; align-items: flex-start; }
   .control-popovers { padding: 10px 12px; left: 0; right: 0; }
   .selector-panel { width: 100%; max-height: 50vh; }
+  .composer-attachment-row { flex-direction: column; align-items: flex-start; }
+  .composer-attachment-row input[type='file'] { width: 100%; }
 }

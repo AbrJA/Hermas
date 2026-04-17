@@ -26,10 +26,10 @@ class MCPServerResponse(BaseModel):
 
 
 class MCPToolRequest(BaseModel):
-    server: dict = Field(...)
+    serverId: str
 
 
 class MCPCallToolRequest(BaseModel):
-    server: dict = Field(...)
+    serverId: str
     toolName: str
     arguments: dict = Field(default_factory=dict)

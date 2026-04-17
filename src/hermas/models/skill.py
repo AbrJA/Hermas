@@ -14,7 +14,7 @@ class Skill(Base):
     __tablename__ = "skills"
 
     id: Mapped[str] = mapped_column(String(128), primary_key=True)
-    user_id: Mapped[str] = mapped_column(String(128), nullable=False, default="__global__", index=True)
+    user_id: Mapped[str] = mapped_column(String(128), primary_key=True, nullable=False, default="__global__", index=True)
     name: Mapped[str] = mapped_column(String(256), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="No description provided")
     content: Mapped[str] = mapped_column(Text, nullable=False, default="")

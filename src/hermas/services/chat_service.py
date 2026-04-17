@@ -117,7 +117,7 @@ async def _execute_tool(tool_call: dict, mcp_configs: dict[str, MCPServerConfig]
 # ---------------------------------------------------------------------------
 
 
-async def _chat_context(payload: dict, cfg: AppConfig, db: AsyncSession) -> dict:
+async def _chat_context(payload: dict, user_id: str, cfg: AppConfig, db: AsyncSession) -> dict:
     messages = _normalize_messages(payload.get("messages", []))
     model = str(payload.get("model", "")) or cfg.default_model
     base_url = str(payload.get("baseUrl", "")) or cfg.llm_base_url
@@ -127,10 +127,10 @@ async def _chat_context(payload: dict, cfg: AppConfig, db: AsyncSession) -> dict
     max_tokens = int(payload.get("maxTokens", 1200))
 
     system_prompt, applied_skill_ids = await prompt_builder.build_system_prompt(
-        payload, cfg, messages, api_key, base_url, model, db
+        user_id, payload, cfg, messages, api_key, base_url, model, db
     )
-    mcp_configs = prompt_builder.build_mcp_server_configs(payload)
-    system_prompt = await prompt_builder.append_mcp_context(system_prompt, mcp_configs, db)
+    mcp_configs = await prompt_builder.build_mcp_server_configs(payload, user_id, db)
+    system_prompt = await prompt_builder.append_mcp_context(system_prompt, mcp_configs, db, user_id)
 
     return {
         "messages": messages,
@@ -235,7 +235,7 @@ async def _chat_with_tools(
 
 async def complete_chat(cfg: AppConfig, user_id: str, payload: dict, db: AsyncSession) -> dict:
     conversation_id = _conversation_id(payload)
-    ctx = await _chat_context(payload, cfg, db)
+    ctx = await _chat_context(payload, user_id, cfg, db)
 
     content = await _chat_with_tools(cfg, ctx)
 
@@ -260,7 +260,7 @@ async def complete_chat(cfg: AppConfig, user_id: str, payload: dict, db: AsyncSe
 async def complete_chat_stream(cfg: AppConfig, user_id: str, payload: dict, db: AsyncSession):
     """Async generator yielding SSE event strings."""
     conversation_id = _conversation_id(payload)
-    ctx = await _chat_context(payload, cfg, db)
+    ctx = await _chat_context(payload, user_id, cfg, db)
 
     # Start event
     yield stream_formatter.sse_event("start", {

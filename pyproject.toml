@@ -17,6 +17,8 @@ dependencies = [
     "structlog>=24.4",
     "alembic>=1.14",
     "python-multipart>=0.0.12",
+    "pyjwt[crypto]>=2.9",
+    "pypdf>=5.4",
 ]
 
 [project.scripts]

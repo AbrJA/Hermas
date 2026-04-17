@@ -104,6 +104,22 @@ HERMAS_REQUEST_TIMEOUT_SECONDS=30
 HERMAS_REQUIRE_AUTH=false
 HERMAS_APP_API_TOKEN=
 HERMAS_SESSION_TTL_SECONDS=86400
+
+# Auth0 (optional – enable with HERMAS_AUTH_PROVIDER=auth0)
+HERMAS_AUTH_PROVIDER=session
+HERMAS_AUTH0_DOMAIN=
+HERMAS_AUTH0_AUDIENCE=
+HERMAS_AUTH0_ISSUER=
+HERMAS_AUTH0_ALGORITHM=RS256
+HERMAS_AUTH0_JWKS_CACHE_TTL_SECONDS=600
+HERMAS_AUTH_PROVIDER=session
+
+# Auth0 (required when HERMAS_AUTH_PROVIDER=auth0)
+HERMAS_AUTH0_DOMAIN=your-tenant.us.auth0.com
+HERMAS_AUTH0_AUDIENCE=https://hermas-api
+HERMAS_AUTH0_ISSUER=https://your-tenant.us.auth0.com/
+HERMAS_AUTH0_ALGORITHM=RS256
+HERMAS_AUTH0_JWKS_CACHE_TTL_SECONDS=600
 ```
 
 ### 3️⃣ Run the Application
@@ -151,7 +167,7 @@ Includes:
 Hermas integrates remote MCP servers for runtime tools:
 
 - Register MCP server configs (per user)
-- Discover available tools via `/api/mcp/tools`
+- Discover available tools via `/api/mcp/tools` using a stored `serverId`
 - Model can emit `<tool_call>` blocks during chat
 - Backend executes tools in a controlled loop
 - Tool results fed back into context
@@ -182,8 +198,14 @@ All settings load from `.env` with the `HERMAS_` prefix.
 | Variable | Purpose | Default |
 |----------|---------|---------|
 | `HERMAS_REQUIRE_AUTH` | Enforce auth checks | `false` |
-| `HERMAS_APP_API_TOKEN` | App-level access token | *(optional)* |
-| `HERMAS_SESSION_TTL_SECONDS` | Session lifetime | `86400` |
+| `HERMAS_AUTH_PROVIDER` | Auth strategy: `session` or `auth0` | `session` |
+| `HERMAS_APP_API_TOKEN` | App-level access token (session mode) | *(optional)* |
+| `HERMAS_SESSION_TTL_SECONDS` | Session lifetime (session mode) | `86400` |
+| `HERMAS_AUTH0_DOMAIN` | Auth0 tenant domain | *(empty)* |
+| `HERMAS_AUTH0_AUDIENCE` | Auth0 API audience | *(empty)* |
+| `HERMAS_AUTH0_ISSUER` | Expected token issuer | *(empty)* |
+| `HERMAS_AUTH0_ALGORITHM` | JWT algorithm | `RS256` |
+| `HERMAS_AUTH0_JWKS_CACHE_TTL_SECONDS` | JWKS cache TTL | `600` |
 
 ## 🔌 API Endpoints
 
@@ -266,7 +288,8 @@ curl -X POST http://localhost:8080/api/chat \
     "messages": [{"role": "user", "content": "Hello"}],
     "model": "gpt-4o-mini",
     "selectedSkillIds": [],
-    "autoSkillRouting": true
+    "autoSkillRouting": true,
+    "mcpServerIds": ["server-uuid"]
   }'
 ```
 
@@ -293,7 +316,7 @@ curl -N -X POST http://localhost:8080/api/chat/stream \
 uv run pytest tests/ -v
 ```
 
-**Coverage:** 148+ tests across services, API, streaming, prompt building, MCP, and middleware.
+**Coverage:** 149+ tests across services, API, streaming, prompt building, MCP, and middleware.
 
 ### Run Linting
 
@@ -344,13 +367,13 @@ HERMAS_DEFAULT_MODEL=gpt-4o-mini
 **If** `HERMAS_REQUIRE_AUTH=true`:
 
 Required headers on every request:
-- `X-App-Token` (session creation, if configured)
-- `X-Session-Token`
-- `X-User-Id`
+- Session mode: `X-Session-Token` and `X-User-Id`
+- Session creation (optional): `X-App-Token`
+- Auth0 mode: `Authorization: Bearer <access_token>`
 
 ## 📊 Testing
 
-Comprehensive test suite with **148+ passing tests** across:
+Comprehensive test suite with **149+ passing tests** across:
 
 - ✅ Configuration loading
 - ✅ Chat services (streaming & standard)

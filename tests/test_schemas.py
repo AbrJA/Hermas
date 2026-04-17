@@ -1,6 +1,6 @@
 """Tests for schemas to ensure coverage."""
 
-from hermas.schemas.chat import ChatRequest, ChatResponse, MCPServerPayload
+from hermas.schemas.chat import ChatRequest, ChatResponse
 from hermas.schemas.common import LLMResult, LLMUsage
 from hermas.schemas.conversation import ConversationDetail, ConversationSummary
 from hermas.schemas.mcp import MCPCallToolRequest, MCPServerCreate, MCPToolRequest
@@ -13,17 +13,17 @@ def test_chat_request():
     assert req.temperature == 0.2
     assert req.maxTokens == 1200
     assert req.autoSkillRouting is True
-    assert req.mcpServers == []
-    assert req.mcpServer is None
+    assert req.mcpServerIds == []
+    assert req.mcpServerId == ""
 
 
 def test_chat_request_with_mcp():
     req = ChatRequest(
         messages=[{"role": "user", "content": "Hi"}],
-        mcpServer=MCPServerPayload(url="http://localhost:8000/mcp"),
+        mcpServerId="server-1",
         model="gpt-4",
     )
-    assert req.mcpServer.url == "http://localhost:8000/mcp"
+    assert req.mcpServerId == "server-1"
     assert req.model == "gpt-4"
 
 
@@ -91,13 +91,13 @@ def test_mcp_server_create():
 
 
 def test_mcp_tool_request():
-    req = MCPToolRequest(server={"url": "http://localhost:8000/mcp"})
-    assert req.server["url"] == "http://localhost:8000/mcp"
+    req = MCPToolRequest(serverId="server-1")
+    assert req.serverId == "server-1"
 
 
 def test_mcp_call_tool_request():
     req = MCPCallToolRequest(
-        server={"url": "http://localhost:8000/mcp"},
+        serverId="server-1",
         toolName="run_query",
         arguments={"query": "SELECT 1"},
     )

@@ -18,8 +18,12 @@ router = APIRouter(prefix="/api/mcp", tags=["mcp"])
 async def list_tools(
     body: MCPToolRequest,
     user_id: Annotated[str, Depends(require_session)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    tools = await mcp_service.list_tools_from_payload(body.server)
+    server = await mcp_service.get_server(db, user_id, body.serverId)
+    if server is None:
+        raise HTTPException(404, detail="Server not found")
+    tools = await mcp_service.list_tools_from_payload(server)
     return {"userId": user_id, "tools": tools}
 
 
@@ -27,8 +31,12 @@ async def list_tools(
 async def call_tool(
     body: MCPCallToolRequest,
     user_id: Annotated[str, Depends(require_session)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await mcp_service.call_tool_from_payload(body.server, body.toolName, body.arguments)
+    server = await mcp_service.get_server(db, user_id, body.serverId)
+    if server is None:
+        raise HTTPException(404, detail="Server not found")
+    result = await mcp_service.call_tool_from_payload(server, body.toolName, body.arguments)
     return {"userId": user_id, "result": result}
 
 

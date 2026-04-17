@@ -40,5 +40,11 @@ async def config_endpoint(cfg: Annotated[AppConfig, Depends(get_app_config)]):
         "baseUrl": cfg.llm_base_url,
         "hasBackendApiKey": bool(cfg.default_api_key.strip()),
         "requireAuth": cfg.require_auth,
+        "authProvider": cfg.auth_provider,
+        "auth0": {
+            "domain": cfg.auth0_domain,
+            "clientId": cfg.auth0_client_id,
+            "audience": cfg.auth0_audience,
+        },
         "requestTimeoutSeconds": cfg.request_timeout_seconds,
     }

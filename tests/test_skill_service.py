@@ -38,7 +38,13 @@ async def test_list_skills(db_session):
 @pytest.mark.asyncio
 async def test_update_skill(db_session):
     await skill_service.create_skill(db_session, skill_id="upd-skill", name="Original", content="V1")
-    result = await skill_service.update_skill(db_session, skill_id="upd-skill", name="Updated", content="V2")
+    result = await skill_service.update_skill(
+        db_session,
+        skill_id="upd-skill",
+        user_id="__global__",
+        name="Updated",
+        content="V2",
+    )
     assert result["name"] == "Updated"
     assert result["content"] == "V2"
 
@@ -46,7 +52,7 @@ async def test_update_skill(db_session):
 @pytest.mark.asyncio
 async def test_delete_skill(db_session):
     await skill_service.create_skill(db_session, skill_id="del-skill", name="ToDelete", content="X")
-    deleted = await skill_service.delete_skill(db_session, "del-skill")
+    deleted = await skill_service.delete_skill(db_session, "del-skill", user_id="__global__")
     assert deleted is True
 
     skill = await skill_service.get_skill(db_session, "del-skill")
@@ -55,8 +61,32 @@ async def test_delete_skill(db_session):
 
 @pytest.mark.asyncio
 async def test_delete_nonexistent_skill(db_session):
-    deleted = await skill_service.delete_skill(db_session, "nonexistent")
+    deleted = await skill_service.delete_skill(db_session, "nonexistent", user_id="__global__")
     assert deleted is False
+
+
+@pytest.mark.asyncio
+async def test_same_skill_id_different_users(db_session):
+    await skill_service.create_skill(
+        db_session,
+        skill_id="shared-id",
+        user_id="alice",
+        name="Alice Skill",
+        content="A",
+    )
+    await skill_service.create_skill(
+        db_session,
+        skill_id="shared-id",
+        user_id="bob",
+        name="Bob Skill",
+        content="B",
+    )
+
+    alice_skill = await skill_service.get_skill(db_session, "shared-id", user_id="alice")
+    bob_skill = await skill_service.get_skill(db_session, "shared-id", user_id="bob")
+
+    assert alice_skill is not None and alice_skill["name"] == "Alice Skill"
+    assert bob_skill is not None and bob_skill["name"] == "Bob Skill"
 
 
 @pytest.mark.asyncio

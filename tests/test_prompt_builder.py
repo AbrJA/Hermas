@@ -1,5 +1,8 @@
 """Tests for prompt builder."""
 
+import pytest
+
+from hermas.services import mcp_service
 from hermas.services.prompt_builder import _bool_value, build_mcp_server_configs
 
 
@@ -26,34 +29,61 @@ def test_bool_value_default():
     assert _bool_value(None, False) is False
 
 
-def test_build_mcp_server_configs_from_list():
-    payload = {
-        "mcpServers": [
-            {"name": "server-1", "url": "http://localhost:8000/mcp"},
-            {"name": "server-2", "url": "http://localhost:9000/mcp", "authHeaderName": "Authorization", "authHeaderValue": "Bearer x"},
-        ]
-    }
-    configs = build_mcp_server_configs(payload)
+@pytest.mark.asyncio
+async def test_build_mcp_server_configs_from_list(db_session):
+    await mcp_service.save_server(
+        db_session,
+        "alice",
+        {"id": "srv-1", "name": "server-1", "url": "http://localhost:8000/mcp"},
+    )
+    await mcp_service.save_server(
+        db_session,
+        "alice",
+        {
+            "id": "srv-2",
+            "name": "server-2",
+            "url": "http://localhost:9000/mcp",
+            "authHeaderName": "Authorization",
+            "authHeaderValue": "Bearer x",
+        },
+    )
+    payload = {"mcpServerIds": ["srv-1", "srv-2"]}
+    configs = await build_mcp_server_configs(payload, "alice", db_session)
     assert len(configs) == 2
     assert "server-1" in configs
     assert "server-2" in configs
     assert configs["server-2"].auth_header_name == "Authorization"
 
 
-def test_build_mcp_server_configs_from_single():
-    payload = {
-        "mcpServer": {"url": "http://localhost:8000/mcp"},
-    }
-    configs = build_mcp_server_configs(payload)
+@pytest.mark.asyncio
+async def test_build_mcp_server_configs_from_single(db_session):
+    await mcp_service.save_server(
+        db_session,
+        "alice",
+        {"id": "srv-1", "name": "single", "url": "http://localhost:8000/mcp"},
+    )
+    payload = {"mcpServerId": "srv-1"}
+    configs = await build_mcp_server_configs(payload, "alice", db_session)
     assert len(configs) == 1
 
 
-def test_build_mcp_server_configs_empty():
-    configs = build_mcp_server_configs({})
+@pytest.mark.asyncio
+async def test_build_mcp_server_configs_empty(db_session):
+    configs = await build_mcp_server_configs({}, "alice", db_session)
     assert len(configs) == 0
 
 
-def test_build_mcp_server_configs_invalid_skipped():
-    payload = {"mcpServers": [{"name": "no-url"}, {"url": "http://valid.com"}]}
-    configs = build_mcp_server_configs(payload)
+@pytest.mark.asyncio
+async def test_build_mcp_server_configs_invalid_skipped(db_session):
+    payload = {"mcpServerIds": ["missing"]}
+    configs = await build_mcp_server_configs(payload, "alice", db_session)
+    assert len(configs) == 0
+
+    await mcp_service.save_server(
+        db_session,
+        "alice",
+        {"id": "valid", "name": "valid", "url": "http://valid.com"},
+    )
+    payload = {"mcpServerIds": ["missing", "valid"]}
+    configs = await build_mcp_server_configs(payload, "alice", db_session)
     assert len(configs) == 1

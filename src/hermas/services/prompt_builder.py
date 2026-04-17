@@ -31,12 +31,12 @@ def _bool_value(value, default: bool) -> bool:
 # ---------------------------------------------------------------------------
 
 
-async def _build_skill_context(skill_ids: list[str], db: AsyncSession) -> str:
+async def _build_skill_context(skill_ids: list[str], user_id: str, db: AsyncSession) -> str:
     if not skill_ids:
         return ""
     chunks: list[str] = []
     for sid in skill_ids:
-        skill = await skill_service.get_skill(db, sid)
+        skill = await skill_service.get_skill(db, sid, user_id=user_id)
         if skill:
             chunks.append(f"# Skill: {skill['name']}\n{skill['content']}")
     return "\n\n---\n\n".join(chunks) if chunks else ""
@@ -48,6 +48,7 @@ async def _build_skill_context(skill_ids: list[str], db: AsyncSession) -> str:
 
 
 async def build_system_prompt(
+    user_id: str,
     payload: dict,
     cfg: AppConfig,
     messages: list[dict],
@@ -58,9 +59,9 @@ async def build_system_prompt(
 ) -> tuple[str, list[str]]:
     custom = str(payload.get("systemPrompt", ""))
     resolved_skill_ids = await skill_routing_service.resolve_skill_ids(
-        payload, cfg, messages, api_key, base_url, model, db
+        payload, user_id, cfg, messages, api_key, base_url, model, db
     )
-    skill_context = await _build_skill_context(resolved_skill_ids, db)
+    skill_context = await _build_skill_context(resolved_skill_ids, user_id, db)
 
     segments: list[str] = [cfg.system_prompt]
     if custom.strip():
@@ -89,18 +90,25 @@ async def build_system_prompt(
 # ---------------------------------------------------------------------------
 
 
-def build_mcp_server_configs(payload: dict) -> dict[str, MCPServerConfig]:
-    raw_servers: list = []
-    mcp_servers_raw = payload.get("mcpServers")
-    if isinstance(mcp_servers_raw, list):
-        raw_servers.extend(mcp_servers_raw)
-    single = payload.get("mcpServer")
-    if isinstance(single, dict):
-        raw_servers.append(single)
+async def build_mcp_server_configs(payload: dict, user_id: str, db: AsyncSession) -> dict[str, MCPServerConfig]:
+    from hermas.services import mcp_service
+
+    selected_ids: list[str] = []
+    mcp_server_ids_raw = payload.get("mcpServerIds")
+    if isinstance(mcp_server_ids_raw, list):
+        selected_ids.extend(str(x).strip() for x in mcp_server_ids_raw if str(x).strip())
+
+    single_id = str(payload.get("mcpServerId", "")).strip()
+    if single_id:
+        selected_ids.append(single_id)
+
+    if not selected_ids:
+        return {}
 
     configs: dict[str, MCPServerConfig] = {}
-    for raw in raw_servers:
-        if not isinstance(raw, dict) or "url" not in raw:
+    for server_id in selected_ids:
+        raw = await mcp_service.get_server(db, user_id, server_id)
+        if not raw or "url" not in raw:
             continue
         name = str(raw.get("name", raw.get("url", "mcp")))
         try:
@@ -150,6 +158,7 @@ async def append_mcp_context(
     system_prompt: str,
     mcp_configs: dict[str, MCPServerConfig],
     db: AsyncSession,
+    user_id: str,
 ) -> str:
     if not mcp_configs:
         return system_prompt
@@ -159,7 +168,7 @@ async def append_mcp_context(
         return system_prompt
 
     # Load the mcp-tools skill and inject dynamic tool list
-    skill = await skill_service.get_skill(db, "mcp-tools")
+    skill = await skill_service.get_skill(db, "mcp-tools", user_id=user_id)
     if skill:
         skill_content = skill["content"].replace("{{MCP_TOOLS_LIST}}", tools_text)
         return system_prompt + "\n\n" + skill_content

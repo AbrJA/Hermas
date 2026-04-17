@@ -8,6 +8,7 @@ from pathlib import Path
 
 import structlog
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from hermas.models.skill import Skill
@@ -18,15 +19,15 @@ logger = structlog.get_logger()
 # In-memory cache (list of lightweight dicts)
 # ---------------------------------------------------------------------------
 
-_cache: list[dict] | None = None
-_cache_ts: float = 0.0
+_cache: dict[str, list[dict]] = {}
+_cache_ts: dict[str, float] = {}
 _CACHE_TTL = 30.0  # seconds
 
 
 def invalidate_cache() -> None:
     global _cache, _cache_ts
-    _cache = None
-    _cache_ts = 0.0
+    _cache = {}
+    _cache_ts = {}
 
 
 # ---------------------------------------------------------------------------
@@ -65,6 +66,25 @@ def _normalize_skill_id(name: str) -> str:
     return replaced.strip("-")
 
 
+async def _next_available_skill_id(db: AsyncSession, base_id: str) -> str:
+    """Return a globally available skill id for legacy DBs with UNIQUE(skills.id)."""
+    clean_base = base_id.strip() or "uploaded-skill"
+    # Keep room for suffix and stay within VARCHAR(128)
+    clean_base = clean_base[:110]
+
+    result = await db.execute(select(Skill).where(Skill.id == clean_base))
+    if result.scalar_one_or_none() is None:
+        return clean_base
+
+    for i in range(2, 1000):
+        candidate = f"{clean_base}-{i}"
+        result = await db.execute(select(Skill).where(Skill.id == candidate))
+        if result.scalar_one_or_none() is None:
+            return candidate
+
+    raise ValueError("Could not allocate a unique skill id")
+
+
 # ---------------------------------------------------------------------------
 # DB operations
 # ---------------------------------------------------------------------------
@@ -72,35 +92,51 @@ def _normalize_skill_id(name: str) -> str:
 
 async def list_skills(db: AsyncSession, user_id: str = "__global__") -> list[dict]:
     global _cache, _cache_ts
-    if _cache is not None and (time.monotonic() - _cache_ts) < _CACHE_TTL:
-        return _cache
+    cache_key = user_id.strip() or "anonymous"
+    if cache_key in _cache and (time.monotonic() - _cache_ts.get(cache_key, 0.0)) < _CACHE_TTL:
+        return _cache[cache_key]
 
     result = await db.execute(
         select(Skill)
-        .where(Skill.user_id.in_([user_id, "__global__"]))
+        .where(Skill.user_id == cache_key)
         .order_by(Skill.name)
     )
-    skills = [
+    raw = [
         {
             "id": s.id,
+            "userId": s.user_id,
             "name": s.name,
             "description": s.description,
             "updatedAt": s.updated_at.strftime("%Y-%m-%dT%H:%M:%S") if s.updated_at else "",
         }
         for s in result.scalars()
     ]
-    _cache = skills
-    _cache_ts = time.monotonic()
+
+    skills = [
+        {
+            "id": s["id"],
+            "name": s["name"],
+            "description": s["description"],
+            "updatedAt": s["updatedAt"],
+        }
+        for s in sorted(raw, key=lambda x: x["name"].lower())
+    ]
+    _cache[cache_key] = skills
+    _cache_ts[cache_key] = time.monotonic()
     return skills
 
 
-async def get_skill(db: AsyncSession, skill_id: str) -> dict | None:
-    result = await db.execute(select(Skill).where(Skill.id == skill_id))
+async def get_skill(db: AsyncSession, skill_id: str, user_id: str = "__global__") -> dict | None:
+    owner = user_id.strip() or "anonymous"
+
+    result = await db.execute(select(Skill).where(Skill.id == skill_id, Skill.user_id == owner))
     s = result.scalar_one_or_none()
     if s is None:
         return None
+
     return {
         "id": s.id,
+        "userId": s.user_id,
         "name": s.name,
         "description": s.description,
         "content": s.content,
@@ -108,9 +144,10 @@ async def get_skill(db: AsyncSession, skill_id: str) -> dict | None:
     }
 
 
-async def get_skill_orm(db: AsyncSession, skill_id: str) -> Skill | None:
+async def get_skill_orm(db: AsyncSession, skill_id: str, user_id: str = "__global__") -> Skill | None:
     """Return raw ORM object for routing service."""
-    result = await db.execute(select(Skill).where(Skill.id == skill_id))
+    owner = user_id.strip() or "anonymous"
+    result = await db.execute(select(Skill).where(Skill.id == skill_id, Skill.user_id == owner))
     return result.scalar_one_or_none()
 
 
@@ -123,18 +160,41 @@ async def create_skill(
     content: str,
     user_id: str = "__global__",
 ) -> dict:
+    owner = user_id.strip() or "anonymous"
     if not skill_id:
         skill_id = _normalize_skill_id(name)
 
-    existing = await db.execute(select(Skill).where(Skill.id == skill_id))
+    existing = await db.execute(select(Skill).where(Skill.id == skill_id, Skill.user_id == owner))
     if existing.scalar_one_or_none() is not None:
         # Update in place
-        return await update_skill(db, skill_id=skill_id, name=name, description=description, content=content)
+        return await update_skill(
+            db,
+            skill_id=skill_id,
+            user_id=owner,
+            name=name,
+            description=description,
+            content=content,
+        )
 
-    skill = Skill(id=skill_id, user_id=user_id, name=name, description=description, content=content)
+    skill = Skill(id=skill_id, user_id=owner, name=name, description=description, content=content)
     db.add(skill)
-    await db.commit()
-    await db.refresh(skill)
+    try:
+        await db.commit()
+        await db.refresh(skill)
+    except IntegrityError as exc:
+        await db.rollback()
+
+        # Legacy SQLite tables can still enforce UNIQUE(skills.id).
+        # In that case, allocate a new globally unique id and retry once.
+        if "skills.id" not in str(exc).lower():
+            raise
+
+        fallback_id = await _next_available_skill_id(db, skill_id)
+        skill = Skill(id=fallback_id, user_id=owner, name=name, description=description, content=content)
+        db.add(skill)
+        await db.commit()
+        await db.refresh(skill)
+
     invalidate_cache()
 
     return {
@@ -150,14 +210,16 @@ async def update_skill(
     db: AsyncSession,
     *,
     skill_id: str,
+    user_id: str,
     name: str | None = None,
     description: str | None = None,
     content: str | None = None,
 ) -> dict:
-    result = await db.execute(select(Skill).where(Skill.id == skill_id))
+    owner = user_id.strip() or "anonymous"
+    result = await db.execute(select(Skill).where(Skill.id == skill_id, Skill.user_id == owner))
     skill = result.scalar_one_or_none()
     if skill is None:
-        raise ValueError(f"Skill '{skill_id}' not found")
+        raise ValueError(f"Skill '{skill_id}' not found for user '{owner}'")
 
     if name is not None:
         skill.name = name
@@ -179,8 +241,9 @@ async def update_skill(
     }
 
 
-async def delete_skill(db: AsyncSession, skill_id: str) -> bool:
-    result = await db.execute(delete(Skill).where(Skill.id == skill_id))
+async def delete_skill(db: AsyncSession, skill_id: str, user_id: str) -> bool:
+    owner = user_id.strip() or "anonymous"
+    result = await db.execute(delete(Skill).where(Skill.id == skill_id, Skill.user_id == owner))
     await db.commit()
     invalidate_cache()
     return (result.rowcount or 0) > 0

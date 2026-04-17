@@ -61,13 +61,13 @@ async def test_require_app_token_auth_enabled_no_server_token():
 
 @pytest.mark.asyncio
 async def test_require_session_auth_disabled(app_config, db_session):
-    result = await require_session(app_config, db_session, "", "alice")
+    result = await require_session(app_config, db_session, authorization="", x_session_token="", x_user_id="alice")
     assert result == "alice"
 
 
 @pytest.mark.asyncio
 async def test_require_session_auth_disabled_anonymous(app_config, db_session):
-    result = await require_session(app_config, db_session, "", "")
+    result = await require_session(app_config, db_session, authorization="", x_session_token="", x_user_id="")
     assert result == "anonymous"
 
 
@@ -77,7 +77,7 @@ async def test_require_session_auth_enabled_valid(db_session):
 
     cfg = AppConfig(_env_file=None, require_auth=True)
     token = await session_service.create_session(db_session, "bob", 3600)
-    result = await require_session(cfg, db_session, token, "bob")
+    result = await require_session(cfg, db_session, authorization="", x_session_token=token, x_user_id="bob")
     assert result == "bob"
 
 
@@ -87,5 +87,5 @@ async def test_require_session_auth_enabled_invalid(db_session):
 
     cfg = AppConfig(_env_file=None, require_auth=True)
     with pytest.raises(HTTPException) as exc_info:
-        await require_session(cfg, db_session, "invalid-token", "bob")
+        await require_session(cfg, db_session, authorization="", x_session_token="invalid-token", x_user_id="bob")
     assert exc_info.value.status_code == 401

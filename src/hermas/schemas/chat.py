@@ -5,14 +5,6 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 
-class MCPServerPayload(BaseModel):
-    name: str = "mcp"
-    url: str
-    authHeaderName: str = ""
-    authHeaderValue: str = ""
-    timeoutSeconds: int = 30
-
-
 class ChatRequest(BaseModel):
     messages: list[dict] = Field(..., min_length=1)
     conversationId: str = ""
@@ -24,8 +16,8 @@ class ChatRequest(BaseModel):
     maxTokens: int = 1200
     selectedSkillIds: list[str] = Field(default_factory=list)
     autoSkillRouting: bool = True
-    mcpServers: list[MCPServerPayload] = Field(default_factory=list)
-    mcpServer: MCPServerPayload | None = None
+    mcpServerIds: list[str] = Field(default_factory=list)
+    mcpServerId: str = ""
 
 
 class ChatResponse(BaseModel):

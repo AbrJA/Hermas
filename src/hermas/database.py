@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from hermas.config import AppConfig
@@ -36,13 +37,14 @@ async def init_engine(cfg: AppConfig) -> None:
         await conn.run_sync(Base.metadata.create_all)
         # Create FTS5 virtual table for full-text message search
         await conn.execute(
-            __import__("sqlalchemy").text(
+            text(
                 """
                 CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts
                 USING fts5(conversation_id, content, tokenize='porter')
                 """
             )
         )
+
 
 
 async def close_engine() -> None:

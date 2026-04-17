@@ -44,6 +44,7 @@ class _SkillProxy:
 
 async def resolve_skill_ids(
     payload: dict,
+    user_id: str,
     cfg: AppConfig,
     messages: list[dict],
     api_key: str,
@@ -60,7 +61,7 @@ async def resolve_skill_ids(
     if not auto_routing:
         return candidate_ids
 
-    all_skills = await skill_service.list_skills(db)
+    all_skills = await skill_service.list_skills(db, user_id=user_id)
     id_set = set(candidate_ids)
     candidates = [s for s in all_skills if s["id"] in id_set]
     if not candidates:
@@ -70,13 +71,17 @@ async def resolve_skill_ids(
     if not query.strip():
         return []
 
+    max_skills = int(payload.get("maxAutoSkills", 2))
+    max_skills = max(1, min(max_skills, len(candidates)))
+
     proxies = [_SkillProxy(s) for s in candidates]
-    chosen = await llm_client.route_skill(
+    chosen = await llm_client.route_skills(
         base_url=base_url,
         api_key=api_key,
         model=model,
         query=query,
         skills=proxies,
+        max_count=max_skills,
         timeout_seconds=min(cfg.request_timeout_seconds, 10),
     )
-    return [chosen] if chosen else []
+    return chosen if chosen else []

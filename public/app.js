@@ -13,6 +13,12 @@ const state = {
   userId: 'anonymous',
   conversationId: '',
   requireAuth: false,
+  authProvider: 'session',
+  auth0Domain: '',
+  auth0ClientId: '',
+  auth0Audience: '',
+  accessToken: '',
+  auth0Client: null,
   activePanel: '',
   historyVisible: true,
   autoSkillRouting: true,
@@ -46,6 +52,7 @@ const el = {
   autoSkillRouting: document.getElementById('autoSkillRouting'),
   skillUpload: document.getElementById('skillUpload'),
   uploadSkillButton: document.getElementById('uploadSkillButton'),
+  chatPdfUpload: document.getElementById('chatPdfUpload'),
   historySearch: document.getElementById('historySearch'),
   historyList: document.getElementById('historyList'),
   historyRefreshButton: document.getElementById('historyRefreshButton'),
@@ -72,8 +79,161 @@ const el = {
 
 const conversation = [];
 const DEFAULT_MODELS = ['gpt-4.1-mini', 'gpt-4.1', 'gpt-4o-mini', 'gpt-4o', 'o4-mini', 'o3'];
+const AUTH0_REDIRECT_GUARD_KEY = 'hermas_auth0_redirect_attempted';
 
 function setStatus(message) { el.statusLine.textContent = message; }
+
+function clearAuth0BrowserCache() {
+  try {
+    for (const key of Object.keys(window.localStorage || {})) {
+      if (key.startsWith('@@auth0spajs@@') || key.startsWith('auth0.')) {
+        window.localStorage.removeItem(key);
+      }
+    }
+  } catch {}
+}
+
+async function withTimeout(promise, timeoutMs, timeoutMessage) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function authHeaders(contentType = '') {
+  const headers = {};
+  if (contentType) headers['Content-Type'] = contentType;
+
+  if (state.requireAuth && state.authProvider === 'auth0') {
+    if (state.accessToken) headers.Authorization = `Bearer ${state.accessToken}`;
+    return headers;
+  }
+
+  headers['X-Session-Token'] = state.sessionToken;
+  headers['X-User-Id'] = state.userId;
+  return headers;
+}
+
+async function ensureAuth0Session() {
+  if (!state.requireAuth || state.authProvider !== 'auth0') return true;
+
+  if (!state.auth0Domain || !state.auth0ClientId || !state.auth0Audience) {
+    throw new Error('Auth0 config is incomplete. Set domain, client ID, and audience.');
+  }
+
+  if (!window.auth0 || typeof window.auth0.createAuth0Client !== 'function') {
+    throw new Error('Auth0 SDK failed to load in browser');
+  }
+
+  if (!state.auth0Client) {
+    state.auth0Client = await window.auth0.createAuth0Client({
+      domain: state.auth0Domain,
+      clientId: state.auth0ClientId,
+      authorizationParams: {
+        audience: state.auth0Audience,
+        redirect_uri: window.location.origin,
+      },
+      cacheLocation: 'localstorage',
+      useRefreshTokens: true,
+      useRefreshTokensFallback: true,
+    });
+  }
+
+  const params = new URLSearchParams(window.location.search || '');
+  const authError = params.get('error');
+  const authErrorDescription = params.get('error_description');
+  if (authError) {
+    window.sessionStorage.removeItem(AUTH0_REDIRECT_GUARD_KEY);
+    window.history.replaceState({}, document.title, window.location.pathname);
+    throw new Error(`Auth0 login failed: ${authErrorDescription || authError}`);
+  }
+
+  if (params.has('code') && params.has('state')) {
+    setStatus('Finalizing Auth0 login...');
+    try {
+      await withTimeout(
+        state.auth0Client.handleRedirectCallback(),
+        15000,
+        'Timed out while completing Auth0 login callback',
+      );
+    } catch (error) {
+      clearAuth0BrowserCache();
+      window.sessionStorage.removeItem(AUTH0_REDIRECT_GUARD_KEY);
+      throw error;
+    }
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  let tokenFromSilentLogin = '';
+  try {
+    tokenFromSilentLogin = await withTimeout(
+      state.auth0Client.getTokenSilently({
+        authorizationParams: { audience: state.auth0Audience },
+      }),
+      15000,
+      'Timed out while restoring Auth0 session',
+    );
+  } catch (error) {
+    const errorMessage = String(error?.message || error || '').toLowerCase();
+    const recoverable = (
+      errorMessage.includes('login_required') ||
+      errorMessage.includes('consent_required') ||
+      errorMessage.includes('interaction_required') ||
+      errorMessage.includes('missing_refresh_token')
+    );
+    if (!recoverable) {
+      clearAuth0BrowserCache();
+      throw error;
+    }
+  }
+
+  const authenticated = !!tokenFromSilentLogin || await withTimeout(
+    state.auth0Client.isAuthenticated(),
+    10000,
+    'Timed out while checking Auth0 authentication state',
+  );
+
+  if (!authenticated) {
+    const redirectAttempted = window.sessionStorage.getItem(AUTH0_REDIRECT_GUARD_KEY) === '1';
+    if (redirectAttempted) {
+      throw new Error(
+        'Auth0 login did not complete. Verify Allowed Callback URLs/Web Origins and API audience in Auth0.',
+      );
+    }
+
+    window.sessionStorage.setItem(AUTH0_REDIRECT_GUARD_KEY, '1');
+    setStatus('Redirecting to Auth0...');
+    await state.auth0Client.loginWithRedirect({
+      authorizationParams: {
+        audience: state.auth0Audience,
+        redirect_uri: window.location.origin,
+      },
+    });
+    return false;
+  }
+
+  state.accessToken = tokenFromSilentLogin || await withTimeout(
+    state.auth0Client.getTokenSilently({
+      authorizationParams: { audience: state.auth0Audience },
+    }),
+    15000,
+    'Timed out while getting Auth0 access token',
+  );
+
+  if (!state.accessToken) {
+    throw new Error('Auth0 did not return an access token');
+  }
+
+  window.sessionStorage.removeItem(AUTH0_REDIRECT_GUARD_KEY);
+  const user = await state.auth0Client.getUser();
+  state.userId = user?.sub || state.userId;
+  return true;
+}
 
 function formatTimestamp(raw) {
   if (!raw) return '';
@@ -282,10 +442,20 @@ function renderSkills(skills) {
       try {
         const resp = await fetch(`/api/skills/${encodeURIComponent(skill.id)}`, {
           method: 'DELETE',
-          headers: { 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId },
+          headers: authHeaders(),
         });
-        if (resp.ok) { await loadSkills(); setStatus('Skill deleted.'); }
-        else { const d = await resp.json(); setStatus(`Delete failed: ${d.detail || d.error}`); }
+        if (resp.ok) {
+          await loadSkills();
+          setStatus('Skill deleted.');
+        } else {
+          const d = await resp.json();
+          if (resp.status === 404) {
+            await loadSkills();
+            setStatus('Skill was already deleted.');
+          } else {
+            setStatus(`Delete failed: ${d.detail || d.error}`);
+          }
+        }
       } catch (e) { setStatus(`Delete error: ${e.message}`); }
     });
 
@@ -343,6 +513,10 @@ async function loadConfig() {
   renderModelSelect(data.defaultModel || 'gpt-4.1-mini');
   if (data.hasBackendApiKey) el.apiKey.placeholder = 'Backend key available (optional override)';
   state.requireAuth = !!data.requireAuth;
+  state.authProvider = String(data.authProvider || 'session').toLowerCase();
+  state.auth0Domain = String(data.auth0?.domain || '').trim();
+  state.auth0ClientId = String(data.auth0?.clientId || '').trim();
+  state.auth0Audience = String(data.auth0?.audience || '').trim();
 }
 
 async function createSession() {
@@ -357,21 +531,21 @@ async function createSession() {
 }
 
 async function loadSkills() {
-  const response = await fetch('/api/skills');
+  const response = await fetch('/api/skills', { headers: authHeaders() });
   if (!response.ok) throw new Error('Could not load skills');
   const data = await response.json();
   renderSkills(data.skills || []);
 }
 
 async function loadMcpServers() {
-  const response = await fetch('/api/mcp/servers', { headers: { 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId } });
+  const response = await fetch('/api/mcp/servers', { headers: authHeaders() });
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || data.error || 'Could not load MCP servers');
   renderMcpServers(data.servers || []);
 }
 
 async function loadConversationHistory() {
-  const response = await fetch('/api/conversations/list', { headers: { 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId } });
+  const response = await fetch('/api/conversations/list', { headers: authHeaders() });
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || data.error || 'Could not load conversation history');
   state.conversationSummaries = sortConversations(data.conversations || []);
@@ -381,7 +555,7 @@ async function loadConversationHistory() {
 async function loadConversationById(conversationId) {
   if (!conversationId) return;
   setStatus('Loading conversation...');
-  const response = await fetch(`/api/conversations/load?id=${encodeURIComponent(conversationId)}`, { headers: { 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId } });
+  const response = await fetch(`/api/conversations/load?id=${encodeURIComponent(conversationId)}`, { headers: authHeaders() });
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || data.error || 'Could not load conversation');
   const conv = data.conversation || {};
@@ -407,8 +581,8 @@ async function handleLoadTools() {
   try {
     const response = await fetch('/api/mcp/tools', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId },
-      body: JSON.stringify({ server }),
+      headers: authHeaders('application/json'),
+      body: JSON.stringify({ serverId: server.id }),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || data.error || 'Failed to load tools');
@@ -473,7 +647,7 @@ async function handleUploadSkill() {
     setStatus('Uploading skill...');
     const response = await fetch('/api/skills/upload', {
       method: 'POST',
-      headers: { 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId },
+      headers: authHeaders(),
       body: formData,
     });
     const data = await response.json();
@@ -484,6 +658,26 @@ async function handleUploadSkill() {
   } catch (error) {
     setStatus(`Upload error: ${error.message}`);
   }
+}
+
+async function extractPdfForChat(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/chat/attachments/extract', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData,
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || data.error || 'Could not parse PDF');
+
+  const truncationNotice = data.truncated ? `\n\n[Note: PDF content truncated to ${data.maxChars} characters.]` : '';
+  return (
+    `Attached PDF filename: ${data.filename}\n` +
+    `Extracted page count: ${data.pages}\n\n` +
+    `${data.text}${truncationNotice}`
+  );
 }
 
 async function handleSaveMcpServer() {
@@ -500,7 +694,7 @@ async function handleSaveMcpServer() {
     setStatus('Saving MCP server...');
     const response = await fetch('/api/mcp/servers', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId },
+      headers: authHeaders('application/json'),
       body: JSON.stringify(payload),
     });
     const data = await response.json();
@@ -527,7 +721,7 @@ async function handleDeleteMcpServer() {
     setStatus('Deleting MCP server...');
     const response = await fetch(`/api/mcp/servers/${encodeURIComponent(server.id)}`, {
       method: 'DELETE',
-      headers: { 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId },
+      headers: authHeaders(),
     });
     if (!response.ok) { const d = await response.json(); throw new Error(d.detail || d.error || 'Delete failed'); }
     await loadMcpServers();
@@ -542,13 +736,28 @@ async function handleSend(event) {
   const text = el.messageInput.value.trim();
   if (!text || state.isSending) return;
 
-  appendMessage('user', text);
-  conversation.push({ role: 'user', content: text });
-  el.messageInput.value = '';
+  let visibleText = text;
+  let messageForModel = text;
+  const attachment = el.chatPdfUpload?.files?.[0] || null;
+
   setSending(true);
-  setStatus('Generating response...');
 
   try {
+    if (attachment) {
+      const lowerName = String(attachment.name || '').toLowerCase();
+      if (!lowerName.endsWith('.pdf')) throw new Error('Only .pdf attachments are supported in chat');
+      setStatus('Extracting PDF text...');
+      const extractedText = await extractPdfForChat(attachment);
+      messageForModel = `${text}\n\nUse the following document content as context for this answer:\n\n${extractedText}`;
+      visibleText = `${text}\n\n[Attached PDF: ${attachment.name}]`;
+    }
+
+    appendMessage('user', visibleText);
+    conversation.push({ role: 'user', content: messageForModel });
+    el.messageInput.value = '';
+    if (el.chatPdfUpload) el.chatPdfUpload.value = '';
+    setStatus('Generating response...');
+
     const assistantBody = appendMessage('assistant', '');
     let appliedSkillIds = [];
     const payload = {
@@ -559,13 +768,13 @@ async function handleSend(event) {
       apiKey: el.apiKey.value.trim(),
       selectedSkillIds: selectedSkillIds(),
       autoSkillRouting: state.autoSkillRouting,
-      maxAutoSkills: 1,
-      mcpServers: selectedMcpServers(),
+      maxAutoSkills: 2,
+      mcpServerIds: state.selectedMcpServerId ? [state.selectedMcpServerId] : [],
     };
 
     const response = await fetch('/api/chat/stream', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Session-Token': state.sessionToken, 'X-User-Id': state.userId },
+      headers: authHeaders('application/json'),
       body: JSON.stringify(payload),
     });
 
@@ -697,8 +906,17 @@ async function bootstrap() {
   if (el.autoSkillRouting) { el.autoSkillRouting.checked = true; state.autoSkillRouting = true; }
 
   try {
-    await Promise.all([loadConfig(), loadSkills()]);
-    await createSession();
+    await loadConfig();
+    if (state.requireAuth && state.authProvider === 'auth0') {
+      const isReady = await ensureAuth0Session();
+      if (!isReady) {
+        setStatus('Waiting for Auth0 login...');
+        return;
+      }
+    } else {
+      await createSession();
+    }
+    await loadSkills();
     const startupResults = await Promise.allSettled([loadConversationHistory(), loadMcpServers()]);
     if (startupResults[0].status === 'rejected') throw startupResults[0].reason;
     if (startupResults[1].status === 'rejected') {

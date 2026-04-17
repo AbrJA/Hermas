@@ -28,6 +28,13 @@ class AppConfig(BaseSettings):
     require_auth: bool = False
     app_api_token: str = ""
     session_ttl_seconds: int = 86400
+    auth_provider: str = "session"
+    auth0_domain: str = ""
+    auth0_client_id: str = ""
+    auth0_audience: str = ""
+    auth0_issuer: str = ""
+    auth0_algorithm: str = "RS256"
+    auth0_jwks_cache_ttl_seconds: int = 600
 
 
 _config: AppConfig | None = None
